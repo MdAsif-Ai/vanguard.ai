@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     )
 
     # --- Application ---
-    app_name: str = "FinanceRAG"
+    app_name: str = "VANGAURD.AI"
     app_env: Literal["development", "production", "test"] = "development"
     debug: bool = False
     log_level: str = "INFO"
@@ -57,7 +57,6 @@ class Settings(BaseSettings):
     # --- Embeddings ---
     embedding_model: str | None = None
     embedding_device: str = "cpu"
-
     # --- First-run seeding (scripts/seed.py) ---
     seed_admin_email: str = "admin@financerag.dev"
     seed_admin_password: SecretStr | None = None
