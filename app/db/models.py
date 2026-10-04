@@ -144,6 +144,10 @@ class Document(TimestampMixin, Base):
         _str_enum(DocumentStatus), default=DocumentStatus.UPLOADED, server_default="uploaded"
     )
     checksum: Mapped[str | None] = mapped_column(sa.String(128))
+    file_size: Mapped[int | None] = mapped_column(sa.BigInteger())
+    page_count: Mapped[int | None] = mapped_column(sa.Integer())
+    chunk_count: Mapped[int | None] = mapped_column(sa.Integer())
+    error: Mapped[str | None] = mapped_column(sa.Text())
 
 
 class DocumentVersion(Base):

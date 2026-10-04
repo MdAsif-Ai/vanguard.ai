@@ -21,6 +21,7 @@ dependencies = [
     "httpx>=0.27",
     "pyjwt>=2.9",
     "pwdlib[argon2]>=0.2.0",
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]
@@ -30,6 +31,10 @@ dev = [
     "aiosqlite>=0.20",
     "ruff>=0.6",
     "mypy>=1.11",
+]
+ingest = [
+    "docling>=2.0",
+    "sentence-transformers>=3.0",
 ]
 
 [build-system]
@@ -61,7 +66,13 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
-module = ["celery.*", "qdrant_client.*", "pwdlib.*"]
+module = [
+    "celery.*",
+    "qdrant_client.*",
+    "pwdlib.*",
+    "docling.*",
+    "sentence_transformers.*",
+]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

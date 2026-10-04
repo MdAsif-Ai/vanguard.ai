@@ -1,10 +1,16 @@
 """Background tasks.
 
-Phase 1 contains a single health check task. Ingestion and research
-tasks arrive in later phases.
+process_document runs the full ingestion pipeline in the worker. The API
+can import this module safely: heavy ML imports live inside
+app.services.ingestion functions, not at module import time.
 """
 
+import asyncio
+import uuid
+from typing import Any
+
 from app.core.config import get_settings
+from app.services.ingestion import run_ingestion
 from app.workers.celery_app import celery_app
 
 
@@ -17,3 +23,9 @@ def health_check_task() -> dict[str, str]:
         "service": "financerag-worker",
         "app_env": settings.app_env,
     }
+
+
+@celery_app.task(name="financerag.process_document")
+def process_document_task(document_id: str) -> dict[str, Any]:
+    """Run the ingestion pipeline: parse, chunk, embed, index."""
+    return asyncio.run(run_ingestion(uuid.UUID(document_id)))

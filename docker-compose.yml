@@ -38,6 +38,7 @@ services:
       - .env
     volumes:
       - documents_data:/data/documents
+      - models_data:/data/models
     depends_on:
       postgres:
         condition: service_healthy

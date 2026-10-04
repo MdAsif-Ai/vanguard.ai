@@ -3,7 +3,7 @@ name: financerag
 # Deployment from published Docker Hub images (no source build).
 # Requires in .env:
 #   DOCKERHUB_USERNAME=mdasif2006
-#   FINANCERAG_VERSION=v0.1.0   (pin a version; defaults to latest)
+#   FINANCERAG_VERSION=v0.3.0   (pin a version; defaults to latest)
 
 services:
   api:
@@ -39,6 +39,7 @@ services:
       - .env
     volumes:
       - documents_data:/data/documents
+      - models_data:/data/models
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,8 +83,6 @@ services:
       - "6333:6333" # local development only; remove for production
     volumes:
       - qdrant_data:/qdrant/storage
-    # bash ships in the Debian-based image; if your variant lacks it, remove
-    # this block - /api/health/ready remains the authoritative check.
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/6333'"]
       interval: 10s
@@ -97,3 +96,4 @@ volumes:
   redis_data:
   qdrant_data:
   documents_data:
+  models_data:

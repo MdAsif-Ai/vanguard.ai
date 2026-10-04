@@ -38,6 +38,7 @@ test-integration:   ## Run integration tests (requires `make up` and `make migra
 	DATABASE_URL=postgresql+psycopg://financerag:financerag@localhost:5432/financerag \
 	REDIS_URL=redis://localhost:6379/0 \
 	QDRANT_URL=http://localhost:6333 \
+	STORAGE_PATH=/tmp/financerag-test-documents \
 	pytest -m integration
 
 lint:               ## Run ruff checks

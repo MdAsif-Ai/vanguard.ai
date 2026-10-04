@@ -39,6 +39,7 @@ class DocumentService:
         organization_id: uuid.UUID,
         user_id: uuid.UUID,
         data: DocumentCreate,
+        file_size: int | None = None,
     ) -> Document:
         """Register a document record with status 'uploaded' and version 1."""
         if data.checksum is not None:
@@ -57,6 +58,7 @@ class DocumentService:
             document_type=data.document_type,
             fiscal_year=data.fiscal_year,
             checksum=data.checksum,
+            file_size=file_size,
             storage_key=_storage_key(organization_id, document_id),
             status=DocumentStatus.UPLOADED,
         )

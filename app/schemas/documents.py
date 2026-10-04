@@ -7,10 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class DocumentCreate(BaseModel):
-    """Metadata for registering a document record.
-
-    Actual file upload, parsing and indexing arrive in Phase 3.
-    """
+    """Metadata for registering a document record."""
 
     name: str = Field(min_length=1, max_length=512)
     company: str | None = Field(default=None, max_length=255)
@@ -31,6 +28,10 @@ class DocumentResponse(BaseModel):
     storage_key: str
     status: str
     checksum: str | None
+    file_size: int | None
+    page_count: int | None
+    chunk_count: int | None
+    error: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -55,4 +56,16 @@ class DocumentVersionResponse(BaseModel):
 
 class DocumentVersionListResponse(BaseModel):
     items: list[DocumentVersionResponse]
+    total: int
+
+
+class DocumentChunkResponse(BaseModel):
+    id: str
+    chunk_index: int
+    page: int | None
+    text: str
+
+
+class DocumentChunkListResponse(BaseModel):
+    items: list[DocumentChunkResponse]
     total: int

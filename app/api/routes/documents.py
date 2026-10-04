@@ -1,13 +1,20 @@
-"""Document registry API (database-level operations only)."""
+"""Document registry API: metadata CRUD, file upload, ingestion dispatch."""
 
+import hashlib
 import uuid
+from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile, status
 
-from app.api.dependencies import CurrentUser, DbSession
+from app.api.dependencies import CurrentUser, DbSession, SettingsDep
+from app.core.logging import get_logger
+from app.integrations.qdrant import get_qdrant_integration
+from app.integrations.storage import StorageError, get_storage_backend
 from app.schemas.common import MessageResponse
 from app.schemas.documents import (
+    DocumentChunkListResponse,
+    DocumentChunkResponse,
     DocumentCreate,
     DocumentListResponse,
     DocumentResponse,
@@ -15,18 +22,87 @@ from app.schemas.documents import (
     DocumentVersionResponse,
 )
 from app.services.documents import DocumentConflictError, DocumentService
+from app.workers.tasks import process_document_task
 
 router = APIRouter()
+logger = get_logger(__name__)
+
+MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+ALLOWED_UPLOAD_EXTENSIONS = {".pdf", ".docx", ".xlsx", ".txt", ".csv", ".md"}
+
+
+@router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+async def upload_document(
+    file: Annotated[UploadFile, File(description="Document file (PDF/DOCX/XLSX/TXT/CSV/MD)")],
+    session: DbSession,
+    current_user: CurrentUser,
+    settings: SettingsDep,
+    name: Annotated[str | None, Form()] = None,
+    company: Annotated[str | None, Form()] = None,
+    document_type: Annotated[str | None, Form()] = None,
+    fiscal_year: Annotated[int | None, Form()] = None,
+) -> DocumentResponse:
+    """Upload a document file, register it, and queue ingestion.
+
+    The checksum is computed server-side; duplicates within the
+    organization are rejected with 409. Ingestion runs asynchronously in
+    the worker - poll GET /api/documents/{id} for status.
+    """
+    filename = Path(file.filename or "upload").name
+    if Path(filename).suffix.lower() not in ALLOWED_UPLOAD_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported file type. Allowed: {sorted(ALLOWED_UPLOAD_EXTENSIONS)}",
+        )
+    content = await file.read()
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file is empty."
+        )
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="File exceeds the 50 MB upload limit.",
+        )
+
+    checksum = hashlib.sha256(content).hexdigest()
+    data = DocumentCreate(
+        name=(name or filename).strip(),
+        company=company,
+        document_type=document_type,
+        fiscal_year=fiscal_year,
+        checksum=checksum,
+    )
+    try:
+        document = await DocumentService(session).create(
+            organization_id=current_user.organization_id,
+            user_id=current_user.id,
+            data=data,
+            file_size=len(content),
+        )
+    except DocumentConflictError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    try:
+        await get_storage_backend(settings).save(document.storage_key, content)
+    except StorageError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to store the uploaded file.",
+        ) from exc
+
+    process_document_task.delay(str(document.id))
+    return DocumentResponse.model_validate(document)
 
 
 @router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 async def create_document(
     body: DocumentCreate, session: DbSession, current_user: CurrentUser
 ) -> DocumentResponse:
-    """Register a document record (and its first version) in the caller's organization.
+    """Register a document record (metadata only, no file).
 
-    Returns 409 when a document with the same checksum already exists in the
-    organization. File upload, parsing and indexing arrive in Phase 3.
+    Returns 409 when a document with the same checksum already exists in
+    the organization.
     """
     try:
         document = await DocumentService(session).create(
@@ -86,42 +162,97 @@ async def list_document_versions(
     )
 
 
-@router.delete("/{document_id}", response_model=MessageResponse)
-async def delete_document(
-    document_id: uuid.UUID, session: DbSession, current_user: CurrentUser
-) -> MessageResponse:
+@router.get("/{document_id}/chunks", response_model=DocumentChunkListResponse)
+async def list_document_chunks(
+    document_id: uuid.UUID,
+    request: Request,
+    session: DbSession,
+    current_user: CurrentUser,
+    settings: SettingsDep,
+) -> DocumentChunkListResponse:
+    """List the indexed chunks of an ingested document (org-scoped)."""
     document = await DocumentService(session).get(
         organization_id=current_user.organization_id, document_id=document_id
     )
     if document is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
-    await DocumentService(session).delete(
+
+    payloads = await get_qdrant_integration(request.app).list_document_chunks(
+        collection=settings.qdrant_collection,
         organization_id=current_user.organization_id,
+        document_id=document_id,
+        limit=100,
+    )
+    items = [
+        DocumentChunkResponse(
+            id=str(payload.get("point_id")),
+            chunk_index=int(payload.get("chunk_index") or 0),
+            page=payload.get("page"),
+            text=payload.get("text", ""),
+        )
+        for payload in payloads
+    ]
+    return DocumentChunkListResponse(items=items, total=len(items))
+
+
+@router.delete("/{document_id}", response_model=MessageResponse)
+async def delete_document(
+    document_id: uuid.UUID,
+    request: Request,
+    session: DbSession,
+    current_user: CurrentUser,
+    settings: SettingsDep,
+) -> MessageResponse:
+    """Delete a document: DB rows, indexed chunks, and stored file."""
+    document = await DocumentService(session).get(
+        organization_id=current_user.organization_id, document_id=document_id
+    )
+    if document is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    storage_key = document.storage_key
+    organization_id = current_user.organization_id
+    await DocumentService(session).delete(
+        organization_id=organization_id,
         user_id=current_user.id,
         document=document,
     )
+
+    # Best-effort cleanup of derived artifacts (never blocks the delete).
+    try:
+        await get_qdrant_integration(request.app).delete_document_points(
+            collection=settings.qdrant_collection,
+            organization_id=organization_id,
+            document_id=document_id,
+        )
+    except Exception:
+        logger.warning("Could not delete Qdrant points for document %s", document_id)
+    try:
+        await get_storage_backend(settings).delete(storage_key)
+    except StorageError:
+        logger.warning("Could not delete stored file for document %s", document_id)
+
     return MessageResponse(
         message="Document deleted.",
-        detail=(
-            "The database record was removed (dependent rows cascade). Stored "
-            "files are cleaned up when ingestion lands in Phase 3."
-        ),
+        detail="Database record, indexed chunks and the stored file were removed.",
     )
 
 
-@router.post("/{document_id}/reindex")
+@router.post("/{document_id}/reindex", response_model=MessageResponse)
 async def reindex_document(
     document_id: uuid.UUID, session: DbSession, current_user: CurrentUser
-) -> None:
-    document_service = DocumentService(session)
-    if (
-        await document_service.get(
-            organization_id=current_user.organization_id, document_id=document_id
-        )
-        is None
-    ):
+) -> MessageResponse:
+    """Re-run the ingestion pipeline for a stored document."""
+    document = await DocumentService(session).get(
+        organization_id=current_user.organization_id, document_id=document_id
+    )
+    if document is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Reindexing is planned for Phase 3 (parsing, embeddings, Qdrant indexing).",
+    process_document_task.delay(str(document.id))
+    return MessageResponse(
+        message="Reindexing started.",
+        detail=(
+            "The worker will re-parse, re-chunk, re-embed and re-index the stored "
+            "file. Poll GET /api/documents/{id} for status."
+        ),
     )

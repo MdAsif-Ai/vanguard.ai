@@ -41,7 +41,10 @@ class LocalStorageBackend(StorageBackend):
 
     def __init__(self, root: str | Path) -> None:
         self._root = Path(root).resolve()
-        self._root.mkdir(parents=True, exist_ok=True)
+        try:
+            self._root.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            raise StorageError(f"Cannot create or access the storage root: {self._root}") from exc
 
     def _resolve(self, key: str) -> Path:
         if not key:
