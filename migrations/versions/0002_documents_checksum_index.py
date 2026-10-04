@@ -7,7 +7,6 @@ Create Date: 2025-01-15 00:00:00
 Adds the index used for organization-scoped duplicate checksum detection.
 """
 
-import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
