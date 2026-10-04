@@ -66,9 +66,7 @@ class QdrantIntegration:
         """Upsert chunk vectors with org/document metadata. Returns point count."""
         points: list[PointStruct] = []
         for vector, payload in zip(vectors, payloads, strict=True):
-            point_id = uuid.uuid5(
-                uuid.NAMESPACE_URL, f"financerag/{document_id}/{payload['chunk_index']}"
-            )
+            point_id = uuid.uuid5(uuid.NAMESPACE_URL, f"financerag/{document_id}/{payload['chunk_index']}")
             points.append(
                 PointStruct(
                     id=str(point_id),
@@ -92,9 +90,7 @@ class QdrantIntegration:
             collection_name=collection,
             points_selector=Filter(
                 must=[
-                    FieldCondition(
-                        key="organization_id", match=MatchValue(value=str(organization_id))
-                    ),
+                    FieldCondition(key="organization_id", match=MatchValue(value=str(organization_id))),
                     FieldCondition(key="document_id", match=MatchValue(value=str(document_id))),
                 ]
             ),
@@ -113,9 +109,7 @@ class QdrantIntegration:
             collection_name=collection,
             scroll_filter=Filter(
                 must=[
-                    FieldCondition(
-                        key="organization_id", match=MatchValue(value=str(organization_id))
-                    ),
+                    FieldCondition(key="organization_id", match=MatchValue(value=str(organization_id))),
                     FieldCondition(key="document_id", match=MatchValue(value=str(document_id))),
                 ]
             ),
@@ -147,4 +141,4 @@ def get_qdrant_integration(app: "FastAPI") -> QdrantIntegration:
         api_key = settings.qdrant_api_key.get_secret_value() if settings.qdrant_api_key else None
         integration = QdrantIntegration(url=settings.qdrant_url, api_key=api_key)
         app.state.qdrant = integration
-    return integration
+    return integration  
