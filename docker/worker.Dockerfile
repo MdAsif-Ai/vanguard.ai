@@ -22,3 +22,13 @@ RUN useradd --create-home --uid 1000 financerag \
 USER financerag
 
 CMD ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=INFO", "--concurrency=2"]
+
+# System libraries required by OpenCV (docling's table-structure models).
+# python:3.12-slim does not ship the X11/GL libraries that cv2 links against.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libglib2.0-0 \
+        libgl1 \
+        libxcb1 \
+        libxext6 \
+        libsm6 \
+    && rm -rf /var/lib/apt/lists/*

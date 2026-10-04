@@ -1,0 +1,23 @@
+# GPU profile: run the ingestion worker with GPU-accelerated embeddings (bge-m3).
+# Requires the NVIDIA Container Toolkit on the host (driver already installed):
+#   sudo apt-get install -y nvidia-container-toolkit
+#   sudo nvidia-ctk runtime configure --runtime=docker && sudo systemctl restart docker
+#
+# Usage (from source):
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+# Usage (published images):
+#   docker compose -f docker-compose.hub.yml -f docker-compose.gpu.yml up -d
+#
+# Phase 4 will extend this file with the vLLM service (Qwen3) - same profile.
+
+services:
+  worker:
+    environment:
+      EMBEDDING_DEVICE: cuda
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]

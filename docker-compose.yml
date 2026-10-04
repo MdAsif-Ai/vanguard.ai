@@ -97,3 +97,4 @@ volumes:
   redis_data:
   qdrant_data:
   documents_data:
+  models_data:
