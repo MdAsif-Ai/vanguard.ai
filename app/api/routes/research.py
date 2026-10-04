@@ -41,9 +41,7 @@ async def get_research_job(
         organization_id=current_user.organization_id, job_id=job_id
     )
     if job is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Research job not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Research job not found")
     return ResearchJobResponse.model_validate(job)
 
 
@@ -55,9 +53,7 @@ async def get_research_job_status(
         organization_id=current_user.organization_id, job_id=job_id
     )
     if job is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Research job not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Research job not found")
     return ResearchStatusResponse(id=job.id, status=job.status.value)
 
 
@@ -70,9 +66,5 @@ async def list_research_evidence(
         organization_id=current_user.organization_id, research_job_id=job_id
     )
     if evidence is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Research job not found"
-        )
-    return EvidenceListResponse(
-        items=[EvidenceResponse.model_validate(item) for item in evidence]
-    )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Research job not found")
+    return EvidenceListResponse(items=[EvidenceResponse.model_validate(item) for item in evidence])

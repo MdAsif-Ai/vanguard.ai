@@ -43,7 +43,9 @@ class QdrantIntegration:
             return False
         return True
 
-    async def ensure_collection(self, name: str, vector_size: int = DEFAULT_VECTOR_SIZE) -> bool:
+    async def ensure_collection(
+        self, name: str, vector_size: int = DEFAULT_VECTOR_SIZE
+    ) -> bool:
         """Create the collection if missing. Returns True if it was created."""
         if await self._client.collection_exists(name):
             return False
@@ -66,7 +68,9 @@ class QdrantIntegration:
         """Upsert chunk vectors with org/document metadata. Returns point count."""
         points: list[PointStruct] = []
         for vector, payload in zip(vectors, payloads, strict=True):
-            point_id = uuid.uuid5(uuid.NAMESPACE_URL, f"financerag/{document_id}/{payload['chunk_index']}")
+            point_id = uuid.uuid5(
+                uuid.NAMESPACE_URL, f"financerag/{document_id}/{payload['chunk_index']}"
+            )
             points.append(
                 PointStruct(
                     id=str(point_id),
@@ -79,7 +83,9 @@ class QdrantIntegration:
                 )
             )
         if points:
-            await self._client.upsert(collection_name=collection, points=points, wait=True)
+            await self._client.upsert(
+                collection_name=collection, points=points, wait=True
+            )
         return len(points)
 
     async def delete_document_points(
@@ -90,8 +96,14 @@ class QdrantIntegration:
             collection_name=collection,
             points_selector=Filter(
                 must=[
-                    FieldCondition(key="organization_id", match=MatchValue(value=str(organization_id))),
-                    FieldCondition(key="document_id", match=MatchValue(value=str(document_id))),
+                    FieldCondition(
+                        key="organization_id",
+                        match=MatchValue(value=str(organization_id)),
+                    ),
+                    FieldCondition(
+                        key="document_id",
+                        match=MatchValue(value=str(document_id)),
+                    ),
                 ]
             ),
         )
@@ -109,8 +121,14 @@ class QdrantIntegration:
             collection_name=collection,
             scroll_filter=Filter(
                 must=[
-                    FieldCondition(key="organization_id", match=MatchValue(value=str(organization_id))),
-                    FieldCondition(key="document_id", match=MatchValue(value=str(document_id))),
+                    FieldCondition(
+                        key="organization_id",
+                        match=MatchValue(value=str(organization_id)),
+                    ),
+                    FieldCondition(
+                        key="document_id",
+                        match=MatchValue(value=str(document_id)),
+                    ),
                 ]
             ),
             limit=limit,
@@ -138,7 +156,11 @@ def get_qdrant_integration(app: "FastAPI") -> QdrantIntegration:
     integration = getattr(app.state, "qdrant", None)
     if integration is None:
         settings: Settings = app.state.settings
-        api_key = settings.qdrant_api_key.get_secret_value() if settings.qdrant_api_key else None
+        api_key = (
+            settings.qdrant_api_key.get_secret_value()
+            if settings.qdrant_api_key
+            else None
+        )
         integration = QdrantIntegration(url=settings.qdrant_url, api_key=api_key)
         app.state.qdrant = integration
-    return integration  
+    return integration

@@ -5,7 +5,16 @@ import uuid
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile, status
+from fastapi import (
+    APIRouter,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+    status,
+)
 
 from app.api.dependencies import CurrentUser, DbSession, SettingsDep
 from app.core.logging import get_logger
@@ -37,16 +46,19 @@ async def upload_document(
     session: DbSession,
     current_user: CurrentUser,
     settings: SettingsDep,
-    name: Annotated[str | None, Form()] = None,
-    company: Annotated[str | None, Form()] = None,
-    document_type: Annotated[str | None, Form()] = None,
-    fiscal_year: Annotated[int | None, Form()] = None,
+    name: Annotated[str | None, Form(max_length=512)] = None,
+    company: Annotated[str | None, Form(max_length=255)] = None,
+    document_type: Annotated[str | None, Form(max_length=100)] = None,
+    fiscal_year: Annotated[int | None, Form(ge=1900, le=2100)] = None,
 ) -> DocumentResponse:
     """Upload a document file, register it, and queue ingestion.
 
     The checksum is computed server-side; duplicates within the
     organization are rejected with 409. Ingestion runs asynchronously in
     the worker - poll GET /api/documents/{id} for status.
+
+    Form validation: fiscal_year must be 1900-2100 (a clean 422 is
+    returned for invalid values, not a 500).
     """
     filename = Path(file.filename or "upload").name
     if Path(filename).suffix.lower() not in ALLOWED_UPLOAD_EXTENSIONS:
@@ -66,8 +78,16 @@ async def upload_document(
         )
 
     checksum = hashlib.sha256(content).hexdigest()
+
+    # Build the display name. If a custom name was provided WITHOUT a file
+    # extension, append the original file's extension - the ingestion
+    # parser detects the document format from the name's suffix.
+    display_name = (name or filename).strip()
+    if name and not Path(name).suffix and Path(filename).suffix:
+        display_name = f"{display_name}{Path(filename).suffix}"
+
     data = DocumentCreate(
-        name=(name or filename).strip(),
+        name=display_name,
         company=company,
         document_type=document_type,
         fiscal_year=fiscal_year,
@@ -142,7 +162,9 @@ async def get_document(
         organization_id=current_user.organization_id, document_id=document_id
     )
     if document is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
+        )
     return DocumentResponse.model_validate(document)
 
 
@@ -155,7 +177,9 @@ async def list_document_versions(
         organization_id=current_user.organization_id, document_id=document_id
     )
     if versions is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
+        )
     return DocumentVersionListResponse(
         items=[DocumentVersionResponse.model_validate(version) for version in versions],
         total=len(versions),
@@ -175,7 +199,9 @@ async def list_document_chunks(
         organization_id=current_user.organization_id, document_id=document_id
     )
     if document is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
+        )
 
     payloads = await get_qdrant_integration(request.app).list_document_chunks(
         collection=settings.qdrant_collection,
@@ -208,7 +234,9 @@ async def delete_document(
         organization_id=current_user.organization_id, document_id=document_id
     )
     if document is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
+        )
 
     storage_key = document.storage_key
     organization_id = current_user.organization_id
@@ -247,7 +275,9 @@ async def reindex_document(
         organization_id=current_user.organization_id, document_id=document_id
     )
     if document is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
+        )
     process_document_task.delay(str(document.id))
     return MessageResponse(
         message="Reindexing started.",

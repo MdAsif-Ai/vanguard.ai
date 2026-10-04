@@ -72,11 +72,10 @@ async def test_delete_document(client: TestClient, org_user) -> None:
 
 async def test_reindex_dispatches(client: TestClient, org_user) -> None:
     document = _create_document(client, org_user.headers)
-    response = client.post(
-        f"/api/documents/{document['id']}/reindex", headers=org_user.headers
-    )
+    response = client.post(f"/api/documents/{document['id']}/reindex", headers=org_user.headers)
     assert response.status_code == 200
     assert response.json()["message"] == "Reindexing started."
+
 
 async def test_duplicate_checksum_returns_409(client: TestClient, org_user) -> None:
     checksum = uuid.uuid4().hex
