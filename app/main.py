@@ -1,15 +1,20 @@
 """FinanceRAG FastAPI application entrypoint."""
 
-from collections.abc import AsyncIterator
+import time
+import uuid
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import JSONResponse
 
 from app import __version__
 from app.api.router import api_router
 from app.core.config import Settings, get_settings
-from app.core.logging import setup_logging
+from app.core.logging import get_logger, setup_logging
 from app.db.database import create_db_engine, create_session_factory
+
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
@@ -36,6 +41,43 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             await redis_integration.close()
 
 
+def _register_middleware(app: FastAPI) -> None:
+    """Attach request logging and the catch-all error handler."""
+
+    @app.middleware("http")
+    async def request_context_middleware(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        request_id = uuid.uuid4().hex[:12]
+        request.state.request_id = request_id
+        start = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception:
+            logger.exception(
+                "Unhandled exception request_id=%s method=%s path=%s",
+                request_id,
+                request.method,
+                request.url.path,
+            )
+            return JSONResponse(
+                status_code=500,
+                content={"detail": "Internal server error."},
+                headers={"X-Request-ID": request_id},
+            )
+        duration_ms = (time.perf_counter() - start) * 1000
+        response.headers["X-Request-ID"] = request_id
+        logger.info(
+            "request completed request_id=%s method=%s path=%s status=%s duration_ms=%.1f",
+            request_id,
+            request.method,
+            request.url.path,
+            response.status_code,
+            duration_ms,
+        )
+        return response
+
+
 def create_app() -> FastAPI:
     """Build the FastAPI application."""
     settings = get_settings()
@@ -50,6 +92,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     app.state.settings = settings
+    _register_middleware(app)
     app.include_router(api_router)
     return app
 

@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class DocumentCreate(BaseModel):
     """Metadata for registering a document record.
 
-    Actual file upload, parsing and indexing arrive in Phase 2.
+    Actual file upload, parsing and indexing arrive in Phase 3.
     """
 
     name: str = Field(min_length=1, max_length=512)
@@ -40,3 +40,19 @@ class DocumentListResponse(BaseModel):
     total: int
     skip: int
     limit: int
+
+
+class DocumentVersionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    document_id: uuid.UUID
+    version: int
+    checksum: str | None
+    storage_key: str
+    created_at: datetime
+
+
+class DocumentVersionListResponse(BaseModel):
+    items: list[DocumentVersionResponse]
+    total: int

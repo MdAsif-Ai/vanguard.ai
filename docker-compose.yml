@@ -17,7 +17,7 @@ services:
       redis:
         condition: service_healthy
       qdrant:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test:
         - "CMD"
@@ -76,11 +76,19 @@ services:
     restart: unless-stopped
 
   qdrant:
-    image: qdrant/qdrant:latest # pin an exact version for production
+    image: qdrant/qdrant:v1.12.4 # pinned for reproducibility; update deliberately
     ports:
       - "6333:6333" # local development only; remove for production
     volumes:
       - qdrant_data:/qdrant/storage
+    # bash ships in the Debian-based image; if your variant lacks it, remove
+    # this block - /api/health/ready remains the authoritative check.
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/6333'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
     restart: unless-stopped
 
 volumes:

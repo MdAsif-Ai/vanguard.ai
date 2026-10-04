@@ -1,9 +1,5 @@
 """SQLAlchemy models for the FinanceRAG foundation schema.
 
-Phase 1 defines the persistence layer for the platform: organizations,
-users, documents and versions, financial facts, research jobs and
-messages, claims, evidence, calculations and audit logs.
-
 Design notes:
 - UUID primary keys generated on the Python side.
 - Portable enum columns (VARCHAR + CHECK) storing lowercase values.
@@ -130,6 +126,10 @@ class User(TimestampMixin, Base):
 
 class Document(TimestampMixin, Base):
     __tablename__ = "documents"
+    __table_args__ = (
+        sa.Index("ix_documents_status", "status"),
+        sa.Index("ix_documents_checksum", "checksum"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(sa.Uuid(), primary_key=True, default=uuid.uuid4)
     organization_id: Mapped[uuid.UUID] = mapped_column(
@@ -144,10 +144,6 @@ class Document(TimestampMixin, Base):
         _str_enum(DocumentStatus), default=DocumentStatus.UPLOADED, server_default="uploaded"
     )
     checksum: Mapped[str | None] = mapped_column(sa.String(128))
-
-
-# Explicit index on document status for status-filtered queries.
-sa.Index("ix_documents_status", Document.status)
 
 
 class DocumentVersion(Base):
@@ -194,6 +190,7 @@ class FinancialFact(Base):
 
 class ResearchJob(TimestampMixin, Base):
     __tablename__ = "research_jobs"
+    __table_args__ = (sa.Index("ix_research_jobs_status", "status"),)
 
     id: Mapped[uuid.UUID] = mapped_column(sa.Uuid(), primary_key=True, default=uuid.uuid4)
     organization_id: Mapped[uuid.UUID] = mapped_column(
@@ -210,9 +207,6 @@ class ResearchJob(TimestampMixin, Base):
         _str_enum(ResearchMode), default=ResearchMode.FAST, server_default="fast"
     )
     result: Mapped[dict[str, Any] | None] = mapped_column(sa.JSON())
-
-
-sa.Index("ix_research_jobs_status", ResearchJob.status)
 
 
 class ResearchMessage(Base):
@@ -275,11 +269,7 @@ class Evidence(Base):
 
 
 class Calculation(Base):
-    """Deterministic financial calculation attached to a claim.
-
-    Example: operation="percentage_change", inputs={"old": 100, "new": 120},
-    formula="(new - old) / old * 100", result={"value": 20.0}, verified=True.
-    """
+    """Deterministic financial calculation attached to a claim."""
 
     __tablename__ = "calculations"
 

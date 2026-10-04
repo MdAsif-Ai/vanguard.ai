@@ -33,7 +33,7 @@ async def _check_database(request: Request) -> CheckResult:
             await asyncio.wait_for(session.execute(text("SELECT 1")), CHECK_TIMEOUT_SECONDS)
     except Exception as exc:
         logger.warning("Readiness check failed: database (%s)", type(exc).__name__)
-        return "unavailable", type(exc).__name__
+        return "error", type(exc).__name__
     return "ok", None
 
 
@@ -42,10 +42,10 @@ async def _check_redis(request: Request) -> CheckResult:
         integration = get_redis_integration(request.app)
         ok = await asyncio.wait_for(integration.ping(), CHECK_TIMEOUT_SECONDS)
         if not ok:
-            return "unavailable", "ping failed"
+            return "error", "ping failed"
     except Exception as exc:
         logger.warning("Readiness check failed: redis (%s)", type(exc).__name__)
-        return "unavailable", type(exc).__name__
+        return "error", type(exc).__name__
     return "ok", None
 
 
@@ -54,10 +54,10 @@ async def _check_qdrant(request: Request) -> CheckResult:
         integration = get_qdrant_integration(request.app)
         ok = await asyncio.wait_for(integration.ping(), CHECK_TIMEOUT_SECONDS)
         if not ok:
-            return "unavailable", "ping failed"
+            return "error", "ping failed"
     except Exception as exc:
         logger.warning("Readiness check failed: qdrant (%s)", type(exc).__name__)
-        return "unavailable", type(exc).__name__
+        return "error", type(exc).__name__
     return "ok", None
 
 
@@ -66,7 +66,11 @@ async def _check_qdrant(request: Request) -> CheckResult:
     responses={200: {"model": ReadinessResponse}, 503: {"model": ReadinessResponse}},
 )
 async def readiness(request: Request) -> Response:
-    """Readiness check: actually verifies PostgreSQL, Redis and Qdrant."""
+    """Readiness check: actually verifies PostgreSQL, Redis and Qdrant.
+
+    Returns 200 when every dependency is reachable, 503 otherwise.
+    Infrastructure failures are reported, never hidden.
+    """
     database, redis_check, qdrant_check = await asyncio.gather(
         _check_database(request), _check_redis(request), _check_qdrant(request)
     )
@@ -79,7 +83,7 @@ async def readiness(request: Request) -> Response:
     details = {name: result[1] for name, result in results.items() if result[1] is not None}
     ready = all(value == "ok" for value in checks.values())
     body = ReadinessResponse(
-        status="ready" if ready else "unavailable",
+        status="ready" if ready else "not_ready",
         checks=checks,
         details=details or None,
     ).model_dump()

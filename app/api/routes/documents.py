@@ -1,4 +1,4 @@
-"""Document registry API (database-level operations only in Phase 1)."""
+"""Document registry API (database-level operations only)."""
 
 import uuid
 from typing import Annotated
@@ -7,8 +7,14 @@ from fastapi import APIRouter, HTTPException, Query, status
 
 from app.api.dependencies import CurrentUser, DbSession
 from app.schemas.common import MessageResponse
-from app.schemas.documents import DocumentCreate, DocumentListResponse, DocumentResponse
-from app.services.documents import DocumentService
+from app.schemas.documents import (
+    DocumentCreate,
+    DocumentListResponse,
+    DocumentResponse,
+    DocumentVersionListResponse,
+    DocumentVersionResponse,
+)
+from app.services.documents import DocumentConflictError, DocumentService
 
 router = APIRouter()
 
@@ -17,15 +23,19 @@ router = APIRouter()
 async def create_document(
     body: DocumentCreate, session: DbSession, current_user: CurrentUser
 ) -> DocumentResponse:
-    """Register a document record in the caller's organization.
+    """Register a document record (and its first version) in the caller's organization.
 
-    File upload, parsing and indexing arrive in Phase 2.
+    Returns 409 when a document with the same checksum already exists in the
+    organization. File upload, parsing and indexing arrive in Phase 3.
     """
-    document = await DocumentService(session).create(
-        organization_id=current_user.organization_id,
-        user_id=current_user.id,
-        data=body,
-    )
+    try:
+        document = await DocumentService(session).create(
+            organization_id=current_user.organization_id,
+            user_id=current_user.id,
+            data=body,
+        )
+    except DocumentConflictError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     return DocumentResponse.model_validate(document)
 
 
@@ -60,6 +70,22 @@ async def get_document(
     return DocumentResponse.model_validate(document)
 
 
+@router.get("/{document_id}/versions", response_model=DocumentVersionListResponse)
+async def list_document_versions(
+    document_id: uuid.UUID, session: DbSession, current_user: CurrentUser
+) -> DocumentVersionListResponse:
+    """List stored versions of a document (organization-scoped)."""
+    versions = await DocumentService(session).list_versions(
+        organization_id=current_user.organization_id, document_id=document_id
+    )
+    if versions is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+    return DocumentVersionListResponse(
+        items=[DocumentVersionResponse.model_validate(version) for version in versions],
+        total=len(versions),
+    )
+
+
 @router.delete("/{document_id}", response_model=MessageResponse)
 async def delete_document(
     document_id: uuid.UUID, session: DbSession, current_user: CurrentUser
@@ -78,7 +104,7 @@ async def delete_document(
         message="Document deleted.",
         detail=(
             "The database record was removed (dependent rows cascade). Stored "
-            "files are cleaned up when ingestion lands in Phase 2."
+            "files are cleaned up when ingestion lands in Phase 3."
         ),
     )
 
@@ -97,5 +123,5 @@ async def reindex_document(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Reindexing is planned for Phase 2 (parsing, embeddings, Qdrant indexing).",
+        detail="Reindexing is planned for Phase 3 (parsing, embeddings, Qdrant indexing).",
     )

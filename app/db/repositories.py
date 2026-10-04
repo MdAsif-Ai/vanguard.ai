@@ -11,7 +11,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import AuditLog, Claim, Document, Evidence, ResearchJob, User
+from app.db.models import AuditLog, Claim, Document, DocumentVersion, Evidence, ResearchJob, User
 
 
 class UserRepository:
@@ -29,7 +29,7 @@ class UserRepository:
 
 
 class DocumentRepository:
-    """Access to document rows, always scoped by organization."""
+    """Access to document rows and versions, always scoped by organization."""
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -44,6 +44,15 @@ class DocumentRepository:
             select(Document).where(
                 Document.id == document_id,
                 Document.organization_id == organization_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_checksum(self, organization_id: uuid.UUID, checksum: str) -> Document | None:
+        result = await self._session.execute(
+            select(Document).where(
+                Document.organization_id == organization_id,
+                Document.checksum == checksum,
             )
         )
         return result.scalar_one_or_none()
@@ -71,6 +80,19 @@ class DocumentRepository:
         await self._session.delete(document)
         await self._session.flush()
 
+    async def create_version(self, version: DocumentVersion) -> DocumentVersion:
+        self._session.add(version)
+        await self._session.flush()
+        return version
+
+    async def list_versions(self, document_id: uuid.UUID) -> list[DocumentVersion]:
+        result = await self._session.execute(
+            select(DocumentVersion)
+            .where(DocumentVersion.document_id == document_id)
+            .order_by(DocumentVersion.version)
+        )
+        return list(result.scalars().all())
+
 
 class ResearchJobRepository:
     """Access to research job rows, always scoped by organization."""
@@ -94,11 +116,7 @@ class ResearchJobRepository:
 
 
 class EvidenceRepository:
-    """Access to evidence rows joined through claims and research jobs.
-
-    Organization scoping is enforced by joining research_jobs, which own
-    the organization.
-    """
+    """Access to evidence rows joined through claims and research jobs."""
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session

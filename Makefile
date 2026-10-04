@@ -1,10 +1,10 @@
 .PHONY: install up build down logs shell migrate migration seed init-qdrant \
-        test test-integration lint format typecheck
+        test test-integration lint format typecheck pull up-hub release
 
 install:            ## Install the package with dev dependencies
     pip install -e ".[dev]"
 
-up:                 ## Start the full stack with Docker Compose
+up:                 ## Start the full stack with Docker Compose (build from source)
     docker compose up -d
 
 build:              ## Build the application images
@@ -34,7 +34,10 @@ init-qdrant:        ## Create the Qdrant collection (default vector size 1024)
 test:               ## Run unit tests (no infrastructure required)
     pytest -m "not integration"
 
-test-integration:   ## Run integration tests (requires `make up`)
+test-integration:   ## Run integration tests (requires `make up` and `make migrate`)
+    DATABASE_URL=postgresql+psycopg://financerag:financerag@localhost:5432/financerag \
+    REDIS_URL=redis://localhost:6379/0 \
+    QDRANT_URL=http://localhost:6333 \
     pytest -m integration
 
 lint:               ## Run ruff checks
@@ -45,3 +48,15 @@ format:             ## Format the codebase
 
 typecheck:          ## Run mypy on the application
     mypy app
+
+pull:               ## Pull published images (needs DOCKERHUB_USERNAME in .env)
+    docker compose -f docker-compose.hub.yml pull
+
+up-hub:             ## Run the stack from Docker Hub images
+    docker compose -f docker-compose.hub.yml up -d
+
+release:            ## Tag and push a release: make release VERSION=v0.2.0
+    @if [ -z "$(VERSION)" ]; then \
+        echo "Usage: make release VERSION=v0.2.0"; exit 1; fi
+    git tag -a $(VERSION) -m "FinanceRAG $(VERSION)"
+    git push origin $(VERSION)

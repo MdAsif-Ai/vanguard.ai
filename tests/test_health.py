@@ -12,6 +12,12 @@ def test_health_returns_ok() -> None:
     assert response.json() == {"status": "ok", "service": "financerag"}
 
 
+def test_health_returns_request_id_header() -> None:
+    with TestClient(app) as client:
+        response = client.get("/api/health")
+    assert response.headers.get("X-Request-ID")
+
+
 def test_unknown_route_returns_404() -> None:
     with TestClient(app) as client:
         response = client.get("/api/does-not-exist")

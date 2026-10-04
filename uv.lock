@@ -413,7 +413,6 @@ wheels = [
 
 [[package]]
 name = "financerag"
-version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },

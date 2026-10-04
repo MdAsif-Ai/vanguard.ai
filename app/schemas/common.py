@@ -11,7 +11,7 @@ class HealthResponse(BaseModel):
 
 
 class ReadinessResponse(BaseModel):
-    status: Literal["ready", "unavailable"]
+    status: Literal["ready", "not_ready"]
     checks: dict[str, str]
     details: dict[str, str] | None = None
 

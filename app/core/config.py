@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     embedding_model: str | None = None
 
     # --- First-run seeding (scripts/seed.py) ---
-    seed_admin_email: str = "admin@financerag.local"
+    seed_admin_email: str = "admin@financerag.dev"
     seed_admin_password: SecretStr | None = None
 
     @model_validator(mode="after")
