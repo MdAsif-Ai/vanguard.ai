@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     )
 
     # --- Application ---
-    app_name: str = "VANGAURD.AI"
+    app_name: str = "VANGUARD.AI"
     app_env: Literal["development", "production", "test"] = "development"
     debug: bool = False
     log_level: str = "INFO"

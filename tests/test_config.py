@@ -8,7 +8,7 @@ from app.core.config import Settings
 
 def test_settings_defaults() -> None:
     settings = Settings(_env_file=None)
-    assert settings.app_name == "FinanceRAG"
+    assert settings.app_name == "VANGUARD.AI"
     assert settings.app_env == "development"
     assert settings.jwt_algorithm == "HS256"
     assert settings.access_token_expire_minutes == 60
