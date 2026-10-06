@@ -43,9 +43,7 @@ class QdrantIntegration:
             return False
         return True
 
-    async def ensure_collection(
-        self, name: str, vector_size: int = DEFAULT_VECTOR_SIZE
-    ) -> bool:
+    async def ensure_collection(self, name: str, vector_size: int = DEFAULT_VECTOR_SIZE) -> bool:
         """Create the collection if missing. Returns True if it was created."""
         if await self._client.collection_exists(name):
             return False
@@ -83,9 +81,7 @@ class QdrantIntegration:
                 )
             )
         if points:
-            await self._client.upsert(
-                collection_name=collection, points=points, wait=True
-            )
+            await self._client.upsert(collection_name=collection, points=points, wait=True)
         return len(points)
 
     async def delete_document_points(
@@ -156,11 +152,7 @@ def get_qdrant_integration(app: "FastAPI") -> QdrantIntegration:
     integration = getattr(app.state, "qdrant", None)
     if integration is None:
         settings: Settings = app.state.settings
-        api_key = (
-            settings.qdrant_api_key.get_secret_value()
-            if settings.qdrant_api_key
-            else None
-        )
+        api_key = settings.qdrant_api_key.get_secret_value() if settings.qdrant_api_key else None
         integration = QdrantIntegration(url=settings.qdrant_url, api_key=api_key)
         app.state.qdrant = integration
     return integration

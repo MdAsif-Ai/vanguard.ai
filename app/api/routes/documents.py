@@ -162,9 +162,7 @@ async def get_document(
         organization_id=current_user.organization_id, document_id=document_id
     )
     if document is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
     return DocumentResponse.model_validate(document)
 
 
@@ -177,9 +175,7 @@ async def list_document_versions(
         organization_id=current_user.organization_id, document_id=document_id
     )
     if versions is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
     return DocumentVersionListResponse(
         items=[DocumentVersionResponse.model_validate(version) for version in versions],
         total=len(versions),
@@ -199,9 +195,7 @@ async def list_document_chunks(
         organization_id=current_user.organization_id, document_id=document_id
     )
     if document is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
     payloads = await get_qdrant_integration(request.app).list_document_chunks(
         collection=settings.qdrant_collection,
@@ -234,9 +228,7 @@ async def delete_document(
         organization_id=current_user.organization_id, document_id=document_id
     )
     if document is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
     storage_key = document.storage_key
     organization_id = current_user.organization_id
@@ -275,9 +267,7 @@ async def reindex_document(
         organization_id=current_user.organization_id, document_id=document_id
     )
     if document is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
     process_document_task.delay(str(document.id))
     return MessageResponse(
         message="Reindexing started.",
