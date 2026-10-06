@@ -30,7 +30,7 @@ RUN pip install --no-cache-dir --timeout 120 --retries 10 .[ingest]
 # build. RapidOCR stores models inside site-packages, which is read-only
 # for the non-root runtime user; baking them here avoids the runtime
 # download permission error.
-RUN python -c "from rapidocr import RapidOCR; RapidOCR()"
+RUN python -c "import pathlib, rapidocr; p = pathlib.Path(rapidocr.__file__).parent / 'models'; p.mkdir(parents=True, exist_ok=True); p.chmod(0o777); print('RapidOCR models dir ready')"
 
 RUN useradd --create-home --uid 1000 financerag \
     && mkdir -p /data/documents /data/models \
