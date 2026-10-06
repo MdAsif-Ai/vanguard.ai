@@ -32,9 +32,7 @@ def process_document_task(document_id: str) -> dict[str, Any]:
 
 
 @celery_app.task(name="financerag.run_research")
-def run_research_task(
-    job_id: str, question: str, organization_id: str
-) -> dict[str, Any]:
+def run_research_task(job_id: str, question: str, organization_id: str) -> dict[str, Any]:
     """Run the research pipeline: retrieve, reason, answer with citations."""
     from app.services.research import run_research
 

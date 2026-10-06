@@ -66,9 +66,7 @@ class RetrievalService:
             if self._settings.qdrant_api_key
             else None
         )
-        qdrant = QdrantIntegration(
-            url=self._settings.qdrant_url, api_key=api_key
-        )
+        qdrant = QdrantIntegration(url=self._settings.qdrant_url, api_key=api_key)
         try:
             raw_results = await qdrant.search(
                 collection=self._settings.qdrant_collection,
@@ -118,9 +116,7 @@ class RetrievalService:
 
             # Truncate very long chunks for the prompt (keep full text in citations)
             text_for_prompt = result.text[:800]
-            evidence_parts.append(
-                f"[{ref}] Source: {doc_label}, {page_label}\n{text_for_prompt}"
-            )
+            evidence_parts.append(f"[{ref}] Source: {doc_label}, {page_label}\n{text_for_prompt}")
             citations.append(
                 {
                     "index": ref,

@@ -157,40 +157,41 @@ def get_qdrant_integration(app: "FastAPI") -> QdrantIntegration:
         app.state.qdrant = integration
     return integration
 
-async def search(
-        self,
-        *,
-        collection: str,
-        query_vector: list[float],
-        organization_id: uuid.UUID,
-        limit: int = 20,
-    ) -> list[dict[str, Any]]:
-        """Semantic search for chunks similar to the query (org-scoped).
 
-        Returns scored results with page metadata for citations.
-        """
-        results = await self._client.search(
-            collection_name=collection,
-            query_vector=query_vector,
-            query_filter=Filter(
-                must=[
-                    FieldCondition(
-                        key="organization_id",
-                        match=MatchValue(value=str(organization_id)),
-                    ),
-                ]
-            ),
-            limit=limit,
-            with_payload=True,
-        )
-        return [
-            {
-                "score": hit.score,
-                "document_id": hit.payload.get("document_id"),
-                "document_name": hit.payload.get("document_name"),
-                "chunk_index": hit.payload.get("chunk_index"),
-                "page": hit.payload.get("page"),
-                "text": hit.payload.get("text", ""),
-            }
-            for hit in results
-        ]
+async def search(
+    self,
+    *,
+    collection: str,
+    query_vector: list[float],
+    organization_id: uuid.UUID,
+    limit: int = 20,
+) -> list[dict[str, Any]]:
+    """Semantic search for chunks similar to the query (org-scoped).
+
+    Returns scored results with page metadata for citations.
+    """
+    results = await self._client.search(
+        collection_name=collection,
+        query_vector=query_vector,
+        query_filter=Filter(
+            must=[
+                FieldCondition(
+                    key="organization_id",
+                    match=MatchValue(value=str(organization_id)),
+                ),
+            ]
+        ),
+        limit=limit,
+        with_payload=True,
+    )
+    return [
+        {
+            "score": hit.score,
+            "document_id": hit.payload.get("document_id"),
+            "document_name": hit.payload.get("document_name"),
+            "chunk_index": hit.payload.get("chunk_index"),
+            "page": hit.payload.get("page"),
+            "text": hit.payload.get("text", ""),
+        }
+        for hit in results
+    ]

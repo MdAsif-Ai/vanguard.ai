@@ -56,9 +56,7 @@ class ResearchService:
         await self._session.commit()
         return job
 
-    async def get_job(
-        self, *, organization_id: uuid.UUID, job_id: uuid.UUID
-    ) -> ResearchJob | None:
+    async def get_job(self, *, organization_id: uuid.UUID, job_id: uuid.UUID) -> ResearchJob | None:
         return await self._jobs.get(organization_id, job_id)
 
 
@@ -93,9 +91,7 @@ async def run_research(
 
         # 2. Retrieve evidence
         retrieval = RetrievalService(settings)
-        results = await retrieval.retrieve(
-            question, organization_id=organization_id
-        )
+        results = await retrieval.retrieve(question, organization_id=organization_id)
 
         if not results:
             result = {
@@ -197,16 +193,12 @@ def _get_llm_client(settings: Settings) -> LLMClient:
 
     return LLMClient(
         base_url=settings.llm_base_url,
-        api_key=settings.llm_api_key.get_secret_value()
-        if settings.llm_api_key
-        else None,
+        api_key=settings.llm_api_key.get_secret_value() if settings.llm_api_key else None,
         model=settings.llm_model,
     )
 
 
-async def _store_result(
-    engine, factory, job_id: uuid.UUID, result: dict[str, Any]
-) -> None:
+async def _store_result(engine, factory, job_id: uuid.UUID, result: dict[str, Any]) -> None:
     """Store the result and update the job status."""
     from app.db.models import ResearchJob, ResearchStatus
 

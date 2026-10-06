@@ -12,6 +12,33 @@ class ResearchCreate(BaseModel):
     mode: Literal["fast", "deep"] = "fast"
 
 
+class AskQuestion(BaseModel):
+    """Ask a question and get an evidence-grounded answer."""
+
+    question: str = Field(min_length=1, max_length=2000)
+
+
+class Citation(BaseModel):
+    """A source reference backing an answer."""
+
+    index: int
+    document_name: str | None = None
+    page: int | None = None
+    text_snippet: str
+    relevance_score: float | None = None
+
+
+class AnswerResponse(BaseModel):
+    """The answer with citations and metadata."""
+
+    answer: str
+    citations: list[Citation]
+    status: str
+    evidence_count: int = 0
+    question: str
+    research_job_id: uuid.UUID
+
+
 class ResearchJobResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
