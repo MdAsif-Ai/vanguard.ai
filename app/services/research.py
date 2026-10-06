@@ -1,31 +1,25 @@
-"""Research service: question → retrieval → LLM reasoning → cited answer.
-
-Phase 4: the ask pipeline runs in the worker via a Celery task.
-The API dispatches and the user polls for the result.
-"""
+"""Research service: question -> retrieval -> LLM reasoning -> cited answer."""
 
 import uuid
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import Settings
+from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.db.models import ResearchJob, ResearchStatus
 from app.db.repositories import AuditLogRepository, ResearchJobRepository
-from app.integrations.llm import LLMClient, LLMError
-from app.services.retrieval import RetrievalService
 
 logger = get_logger(__name__)
 
 
 class ResearchService:
-    def __init__(self, session: AsyncSession, settings: Settings) -> None:
+    """API-level service: create and look up research jobs."""
+
+    def __init__(self, session: AsyncSession) -> None:
         self._session = session
-        self._settings = settings
         self._jobs = ResearchJobRepository(session)
         self._audit = AuditLogRepository(session)
-        self._retrieval = RetrievalService(settings)
 
     async def create_job(
         self,
@@ -60,7 +54,7 @@ class ResearchService:
         return await self._jobs.get(organization_id, job_id)
 
 
-# --- The ask pipeline (runs in the worker, NOT in the API) ---
+# --- The ask pipeline (runs in the worker) ---
 
 
 async def run_research(
@@ -68,20 +62,17 @@ async def run_research(
     question: str,
     organization_id: uuid.UUID,
 ) -> dict[str, Any]:
-    """Full ask pipeline: retrieve evidence → build prompt → LLM → answer.
-
-    This runs inside a Celery worker task. Returns the result dict that
-    gets stored in the research job's result column.
-    """
+    """Full ask pipeline: retrieve evidence -> build prompt -> LLM -> answer."""
     from app.db.database import create_db_engine, create_session_factory
-    from app.db.models import ResearchJob, ResearchStatus
+    from app.integrations.llm import LLMClient, LLMError
+    from app.services.retrieval import RetrievalService
 
     settings = get_settings()
     engine = create_db_engine(settings)
     factory = create_session_factory(engine)
 
     try:
-        # 1. Mark as running
+        # Mark as running
         async with factory() as session:
             job = await session.get(ResearchJob, job_id)
             if job is None:
@@ -89,7 +80,7 @@ async def run_research(
             job.status = ResearchStatus.RUNNING
             await session.commit()
 
-        # 2. Retrieve evidence
+        # Retrieve evidence
         retrieval = RetrievalService(settings)
         results = await retrieval.retrieve(question, organization_id=organization_id)
 
@@ -97,8 +88,7 @@ async def run_research(
             result = {
                 "answer": (
                     "I couldn't find relevant information in the uploaded "
-                    "documents to answer this question. Please upload "
-                    "documents that contain information about this topic."
+                    "documents to answer this question."
                 ),
                 "citations": [],
                 "status": "no_evidence",
@@ -108,14 +98,18 @@ async def run_research(
             await _store_result(engine, factory, job_id, result)
             return result
 
-        # 3. Build evidence context + citations
+        # Build evidence context + citations
         evidence_text, citations = retrieval.build_evidence_context(results)
 
-        # 4. Build the LLM prompt
+        # Build prompt
         system_prompt = _build_system_prompt(evidence_text)
 
-        # 5. Call the LLM (Qwen3 via vLLM)
-        llm = _get_llm_client(settings)
+        # Call the LLM
+        llm = LLMClient(
+            base_url=settings.llm_base_url,
+            api_key=settings.llm_api_key.get_secret_value() if settings.llm_api_key else None,
+            model=settings.llm_model,
+        )
         try:
             answer = await llm.generate(
                 messages=[
@@ -130,21 +124,20 @@ async def run_research(
             result = {
                 "answer": (
                     "I found relevant evidence but couldn't generate an answer "
-                    "due to an LLM error. Please check that the vLLM service "
-                    "is running and configured correctly."
+                    "due to an LLM error. Check that vLLM is running."
                 ),
                 "citations": citations,
                 "status": "llm_error",
                 "evidence_count": len(results),
                 "question": question,
-                "error": str(exc),
+                "error": str(exc)[:500],
             }
             await _store_result(engine, factory, job_id, result)
             return result
         finally:
             await llm.close()
 
-        # 6. Store the result
+        # Store the result
         result = {
             "answer": answer,
             "citations": citations,
@@ -179,35 +172,24 @@ def _build_system_prompt(evidence_text: str) -> str:
         "RULES:\n"
         "- Cite your sources using reference numbers [1], [2], etc.\n"
         "- If the evidence contains specific numbers, use them exactly.\n"
-        "- If the evidence doesn't contain enough information, say so "
-        "clearly rather than guessing.\n"
+        "- If the evidence doesn't contain enough information, say so clearly.\n"
         "- Do not make up facts, numbers, or citations.\n"
         "- Keep your answer concise and directly responsive.\n\n"
         f"EVIDENCE:\n{evidence_text}"
     )
 
 
-def _get_llm_client(settings: Settings) -> LLMClient:
-    """Build the LLM client from settings."""
-    from app.integrations.llm import LLMClient
-
-    return LLMClient(
-        base_url=settings.llm_base_url,
-        api_key=settings.llm_api_key.get_secret_value() if settings.llm_api_key else None,
-        model=settings.llm_model,
-    )
-
-
-async def _store_result(engine, factory, job_id: uuid.UUID, result: dict[str, Any]) -> None:
+async def _store_result(
+    engine: Any,
+    factory: Any,
+    job_id: uuid.UUID,
+    result: dict[str, Any],
+) -> None:
     """Store the result and update the job status."""
-    from app.db.models import ResearchJob, ResearchStatus
-
     status = result.get("status", "completed")
     job_status = ResearchStatus.COMPLETED
     if status in ("failed", "llm_error"):
         job_status = ResearchStatus.FAILED
-    elif status == "no_evidence":
-        job_status = ResearchStatus.COMPLETED
 
     async with factory() as session:
         job = await session.get(ResearchJob, job_id)
@@ -215,6 +197,3 @@ async def _store_result(engine, factory, job_id: uuid.UUID, result: dict[str, An
             job.status = job_status
             job.result = result
             await session.commit()
-
-
-from app.core.config import get_settings  # noqa: E402

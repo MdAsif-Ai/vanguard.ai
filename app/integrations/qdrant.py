@@ -1,7 +1,7 @@
 """Qdrant integration.
 
 The only module that depends on the Qdrant SDK. The retrieval layer
-(Phase 4) must talk to this abstraction, never to the SDK directly.
+must talk to this abstraction, never to the SDK directly.
 """
 
 import uuid
@@ -25,7 +25,6 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
-# Default matches BAAI/bge-m3; the real dimension comes from the provider.
 DEFAULT_VECTOR_SIZE = 1024
 
 
@@ -63,7 +62,7 @@ class QdrantIntegration:
         vectors: list[list[float]],
         payloads: list[dict[str, Any]],
     ) -> int:
-        """Upsert chunk vectors with org/document metadata. Returns point count."""
+        """Upsert chunk vectors with org/document metadata."""
         points: list[PointStruct] = []
         for vector, payload in zip(vectors, payloads, strict=True):
             point_id = uuid.uuid5(
@@ -143,6 +142,44 @@ class QdrantIntegration:
             )
         return results
 
+    async def search(
+        self,
+        *,
+        collection: str,
+        query_vector: list[float],
+        organization_id: uuid.UUID,
+        limit: int = 20,
+    ) -> list[dict[str, Any]]:
+        """Semantic search for chunks similar to the query (org-scoped)."""
+        response = await self._client.query_points(
+            collection_name=collection,
+            query=query_vector,
+            query_filter=Filter(
+                must=[
+                    FieldCondition(
+                        key="organization_id",
+                        match=MatchValue(value=str(organization_id)),
+                    ),
+                ]
+            ),
+            limit=limit,
+            with_payload=True,
+        )
+        results: list[dict[str, Any]] = []
+        for hit in response.points:
+            payload = hit.payload or {}
+            results.append(
+                {
+                    "score": hit.score,
+                    "document_id": payload.get("document_id"),
+                    "document_name": payload.get("document_name"),
+                    "chunk_index": payload.get("chunk_index"),
+                    "page": payload.get("page"),
+                    "text": payload.get("text", ""),
+                }
+            )
+        return results
+
     async def close(self) -> None:
         await self._client.close()
 
@@ -156,42 +193,3 @@ def get_qdrant_integration(app: "FastAPI") -> QdrantIntegration:
         integration = QdrantIntegration(url=settings.qdrant_url, api_key=api_key)
         app.state.qdrant = integration
     return integration
-
-
-async def search(
-    self,
-    *,
-    collection: str,
-    query_vector: list[float],
-    organization_id: uuid.UUID,
-    limit: int = 20,
-) -> list[dict[str, Any]]:
-    """Semantic search for chunks similar to the query (org-scoped).
-
-    Returns scored results with page metadata for citations.
-    """
-    results = await self._client.search(
-        collection_name=collection,
-        query_vector=query_vector,
-        query_filter=Filter(
-            must=[
-                FieldCondition(
-                    key="organization_id",
-                    match=MatchValue(value=str(organization_id)),
-                ),
-            ]
-        ),
-        limit=limit,
-        with_payload=True,
-    )
-    return [
-        {
-            "score": hit.score,
-            "document_id": hit.payload.get("document_id"),
-            "document_name": hit.payload.get("document_name"),
-            "chunk_index": hit.payload.get("chunk_index"),
-            "page": hit.payload.get("page"),
-            "text": hit.payload.get("text", ""),
-        }
-        for hit in results
-    ]
