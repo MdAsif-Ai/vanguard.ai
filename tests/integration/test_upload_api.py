@@ -22,7 +22,7 @@ async def test_upload_document(client: TestClient, org_user) -> None:
     )
     assert response.status_code == 201, response.text
     body = response.json()
-    assert body["name"] == "Quarterly notes"
+    assert body["name"] == "Quarterly notes.txt"
     assert body["status"] in {"uploaded", "processing"}
     assert len(body["checksum"]) == 64
     assert body["file_size"] == len(FILE_CONTENT)
