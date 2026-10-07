@@ -1,8 +1,7 @@
-from typing import Any
-
 """Health (liveness) and readiness endpoints."""
 
 import asyncio
+from typing import Any
 
 from fastapi import APIRouter, Request, Response, status
 from fastapi.responses import JSONResponse
@@ -11,7 +10,6 @@ from sqlalchemy import text
 from app.core.logging import get_logger
 from app.integrations.qdrant import get_qdrant_integration
 from app.integrations.redis import get_redis_integration
-
 from app.schemas.common import HealthResponse, ReadinessResponse
 
 router = APIRouter()
@@ -69,11 +67,7 @@ async def _check_qdrant(request: Request) -> CheckResult:
     responses={200: {"model": ReadinessResponse}, 503: {"model": ReadinessResponse}},
 )
 async def readiness(request: Request) -> Response:
-    """Readiness check: actually verifies PostgreSQL, Redis and Qdrant.
-
-    Returns 200 when every dependency is reachable, 503 otherwise.
-    Infrastructure failures are reported, never hidden.
-    """
+    """Readiness check: actually verifies PostgreSQL, Redis and Qdrant."""
     database, redis_check, qdrant_check = await asyncio.gather(
         _check_database(request), _check_redis(request), _check_qdrant(request)
     )
@@ -97,6 +91,6 @@ async def readiness(request: Request) -> Response:
 @router.get("/metrics")
 async def get_metrics() -> dict[str, Any]:
     """Application metrics for monitoring."""
-    from app.core.monitoring import metrics
+    from app.core.monitoring import metrics as _metrics
 
-    return metrics.get_summary()
+    return _metrics.get_summary()

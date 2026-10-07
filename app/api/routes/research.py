@@ -18,7 +18,6 @@ from app.services.evidence import EvidenceService
 from app.services.research import ResearchService
 from app.workers.tasks import run_research_task
 
-
 router = APIRouter()
 
 
@@ -30,11 +29,7 @@ router = APIRouter()
 async def ask_question(
     body: AskQuestion, session: DbSession, current_user: CurrentUser
 ) -> ResearchJobResponse:
-    """Ask a question and get an evidence-grounded answer with citations.
-
-    Dispatches the research pipeline to the worker. Poll
-    GET /api/research/{id} for the answer (typically 3-10 seconds).
-    """
+    """Ask a question and get an evidence-grounded answer with citations."""
     job = await ResearchService(session).create_job(
         user_id=current_user.id,
         organization_id=current_user.organization_id,
@@ -42,14 +37,6 @@ async def ask_question(
         mode="fast",
     )
     run_research_task.delay(str(job.id), body.question, str(current_user.organization_id))
-
-    from app.core.monitoring import metrics
-
-    metrics.record_business_event(
-        "question_asked", organization_id=str(current_user.organization_id)
-    )
-    from app.core.monitoring import metrics
-
     metrics.record_business_event(
         "question_asked", organization_id=str(current_user.organization_id)
     )
