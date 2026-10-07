@@ -1,0 +1,23 @@
+services:
+  vllm:
+    image: vllm/vllm-openai:latest
+    command: >
+      --model Qwen/Qwen3-4B-Instruct-2507
+      --port 8000
+      --gpu-memory-utilization 0.80
+      --max-model-len 4096
+      --dtype half
+    environment:
+      - HF_HOME=/data/models
+    volumes:
+      - models_data:/data/models
+    ports:
+      - "8001:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]
+    restart: unless-stopped
