@@ -112,6 +112,17 @@ async def upload_document(
         ) from exc
 
     process_document_task.delay(str(document.id))
+
+    from app.core.monitoring import metrics
+
+    metrics.record_business_event(
+        "document_uploaded", organization_id=str(current_user.organization_id)
+    )
+    from app.core.monitoring import metrics
+
+    metrics.record_business_event(
+        "document_uploaded", organization_id=str(current_user.organization_id)
+    )
     return DocumentResponse.model_validate(document)
 
 
@@ -269,6 +280,12 @@ async def reindex_document(
     if document is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
     process_document_task.delay(str(document.id))
+
+    from app.core.monitoring import metrics
+
+    metrics.record_business_event(
+        "document_uploaded", organization_id=str(current_user.organization_id)
+    )
     return MessageResponse(
         message="Reindexing started.",
         detail=(

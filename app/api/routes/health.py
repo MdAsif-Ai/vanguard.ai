@@ -1,3 +1,5 @@
+from typing import Any
+
 """Health (liveness) and readiness endpoints."""
 
 import asyncio
@@ -9,6 +11,7 @@ from sqlalchemy import text
 from app.core.logging import get_logger
 from app.integrations.qdrant import get_qdrant_integration
 from app.integrations.redis import get_redis_integration
+
 from app.schemas.common import HealthResponse, ReadinessResponse
 
 router = APIRouter()
@@ -89,3 +92,11 @@ async def readiness(request: Request) -> Response:
     ).model_dump()
     http_status = status.HTTP_200_OK if ready else status.HTTP_503_SERVICE_UNAVAILABLE
     return JSONResponse(status_code=http_status, content=body)
+
+
+@router.get("/metrics")
+async def get_metrics() -> dict[str, Any]:
+    """Application metrics for monitoring."""
+    from app.core.monitoring import metrics
+
+    return metrics.get_summary()

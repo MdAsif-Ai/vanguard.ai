@@ -42,7 +42,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 def _register_middleware(app: FastAPI) -> None:
-    """Attach request logging and the catch-all error handler."""
+    """Attach request logging, metrics, and rate limiting."""
 
     @app.middleware("http")
     async def request_context_middleware(
@@ -75,7 +75,18 @@ def _register_middleware(app: FastAPI) -> None:
             response.status_code,
             duration_ms,
         )
+
+        # Record metrics
+        from app.core.monitoring import metrics
+
+        metrics.record_request(request.url.path, response.status_code, duration_ms)
+
         return response
+
+    # Rate limiting middleware (after logging, before routes)
+    from app.services.rate_limiter import rate_limit_middleware
+
+    app.middleware("http")(rate_limit_middleware)
 
 
 def create_app() -> FastAPI:

@@ -32,6 +32,7 @@ from app.db.repositories import AuditLogRepository
 from app.integrations.embeddings import get_embedding_provider
 from app.integrations.qdrant import QdrantIntegration
 from app.integrations.storage import get_storage_backend
+from app.services.facts import FactExtractionService
 
 logger = get_logger(__name__)
 
@@ -186,7 +187,9 @@ class IngestionPipeline:
             }
             for chunk in chunks
         ]
-
+        fact_service = FactExtractionService(self._session, self._settings)
+        fact_count = await fact_service.extract_from_document(document)
+        logger.info("Extracted %d financial facts", fact_count)
         api_key = (
             self._settings.qdrant_api_key.get_secret_value()
             if self._settings.qdrant_api_key

@@ -105,9 +105,29 @@ async def run_research(
         # Build evidence context + citations
         evidence_text, citations = retrieval.build_evidence_context(results)
 
-        # Build prompt
-        system_prompt = _build_system_prompt(evidence_text)
+        # 2.5 Check if this is a calculation question
+        from app.services.smart_analysis import SmartAnalysisService
 
+        async with factory() as session:
+            smart = SmartAnalysisService(session, settings)
+            analysis = await smart.analyze(question, organization_id=organization_id)
+
+        calculation_context = ""
+        if analysis.is_calculation and analysis.result is not None:
+            calculation_context = (
+                f"\n\nVERIFIED CALCULATION (computed by deterministic engine, not LLM):\n"
+                f"  Operation: {analysis.operation}\n"
+                f"  Inputs: {analysis.inputs}\n"
+                f"  Formula: {analysis.formula}\n"
+                f"  Result: {analysis.result}\n"
+                f"  Facts used: {analysis.facts_used}\n"
+                f"\nUse this verified result in your answer. Do NOT recompute it.\n"
+                f"Cite this as [CALC] alongside your evidence citations.\n"
+            )
+            logger.info("Calculation performed: %s = %s", analysis.operation, analysis.result)
+
+        # Build prompt
+        system_prompt = _build_system_prompt(evidence_text + calculation_context)
         # Call the LLM
         llm = LLMClient(
             base_url=settings.llm_base_url,

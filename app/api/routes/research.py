@@ -5,6 +5,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, status
 
 from app.api.dependencies import CurrentUser, DbSession
+from app.core.monitoring import metrics
 from app.schemas.research import (
     AskQuestion,
     EvidenceListResponse,
@@ -16,6 +17,7 @@ from app.schemas.research import (
 from app.services.evidence import EvidenceService
 from app.services.research import ResearchService
 from app.workers.tasks import run_research_task
+
 
 router = APIRouter()
 
@@ -40,6 +42,17 @@ async def ask_question(
         mode="fast",
     )
     run_research_task.delay(str(job.id), body.question, str(current_user.organization_id))
+
+    from app.core.monitoring import metrics
+
+    metrics.record_business_event(
+        "question_asked", organization_id=str(current_user.organization_id)
+    )
+    from app.core.monitoring import metrics
+
+    metrics.record_business_event(
+        "question_asked", organization_id=str(current_user.organization_id)
+    )
     return ResearchJobResponse.model_validate(job)
 
 
