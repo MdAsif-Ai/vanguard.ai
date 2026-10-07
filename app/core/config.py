@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     llm_api_key: SecretStr | None = None
     llm_model: str | None = None
 
+    reranker_model: str = "BAAI/bge-reranker-v2-m3"
+    reranker_enabled: bool = True
+    reranker_top_k: int = 15
+
     # --- Embeddings ---
     embedding_model: str | None = None
     embedding_device: str = "cpu"

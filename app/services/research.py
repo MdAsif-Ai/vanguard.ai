@@ -81,8 +81,12 @@ async def run_research(
             await session.commit()
 
         # Retrieve evidence
+
         retrieval = RetrievalService(settings)
-        results = await retrieval.retrieve(question, organization_id=organization_id)
+        results = await retrieval.retrieve(
+            question,
+            organization_id=organization_id,
+        )
 
         if not results:
             result = {

@@ -180,6 +180,60 @@ class QdrantIntegration:
             )
         return results
 
+    async def hybrid_search(
+        self,
+        *,
+        collection: str,
+        query_vector: list[float],
+        organization_id: uuid.UUID,
+        keyword_filter: dict[str, Any] | None = None,
+        limit: int = 20,
+    ) -> list[dict[str, Any]]:
+        """Search with optional metadata filters for hybrid retrieval.
+
+        Args:
+            collection: Qdrant collection name.
+            query_vector: Dense embedding of the query.
+            organization_id: Organization scope.
+            keyword_filter: Optional payload filters (e.g., company, fiscal_year).
+            limit: Maximum results.
+        """
+        must_conditions = [
+            FieldCondition(
+                key="organization_id",
+                match=MatchValue(value=str(organization_id)),
+            ),
+        ]
+
+        if keyword_filter:
+            for key, value in keyword_filter.items():
+                must_conditions.append(FieldCondition(key=key, match=MatchValue(value=value)))
+
+        response = await self._client.query_points(
+            collection_name=collection,
+            query=query_vector,
+            query_filter=Filter(must=must_conditions),
+            limit=limit,
+            with_payload=True,
+        )
+
+        results: list[dict[str, Any]] = []
+        for hit in response.points:
+            payload = hit.payload or {}
+            results.append(
+                {
+                    "score": hit.score,
+                    "document_id": payload.get("document_id"),
+                    "document_name": payload.get("document_name"),
+                    "chunk_index": payload.get("chunk_index"),
+                    "page": payload.get("page"),
+                    "text": payload.get("text", ""),
+                    "company": payload.get("company"),
+                    "fiscal_year": payload.get("fiscal_year"),
+                }
+            )
+        return results
+
     async def close(self) -> None:
         await self._client.close()
 
