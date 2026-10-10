@@ -52,23 +52,23 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "h-screen sticky top-0 flex flex-col bg-white border-r border-[#CBF3F0] shadow-[4px_0_24px_rgba(46,196,182,0.06)] transition-all duration-300 z-30 select-none",
+        "h-screen sticky top-0 flex flex-col bg-[#0B132B] border-r border-[#1C2541]/80 shadow-sidebar-soft rounded-r-[24px] transition-all duration-300 z-30 select-none overflow-hidden",
         collapsed ? "w-16" : "w-64"
       )}
     >
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-[#CBF3F0]">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-[#1C2541]">
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FF9F1C] to-[#FFBF69] flex items-center justify-center shadow-[0_4px_14px_rgba(255,159,28,0.35)] transform transition-transform group-hover:scale-105">
-              <Layers className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#D4AF37] to-[#FAF6E8] flex items-center justify-center shadow-[0_4px_14px_rgba(212,175,55,0.3)] transform transition-transform group-hover:scale-105">
+              <Layers className="w-5 h-5 text-[#0B132B]" />
             </div>
             <div>
-              <span className="text-sm font-bold tracking-wider text-slate-900 flex items-center gap-1">
-                VANGUARD<span className="text-[#FF9F1C]">.AI</span>
+              <span className="text-sm font-bold tracking-wider text-[#F4F1EA] flex items-center gap-1">
+                VANGUARD<span className="text-[#D4AF37]">.AI</span>
               </span>
-              <span className="block text-[10px] text-slate-500 font-mono tracking-tight uppercase font-semibold">
-                Financial Intel
+              <span className="block text-[10px] text-[#A7B3C6] font-mono tracking-tight uppercase font-semibold">
+                Financial Terminal
               </span>
             </div>
           </Link>
@@ -76,8 +76,8 @@ export function Sidebar() {
 
         {collapsed && (
           <Link href="/dashboard" className="mx-auto">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FF9F1C] to-[#FFBF69] flex items-center justify-center shadow-[0_4px_14px_rgba(255,159,28,0.35)]">
-              <Layers className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#D4AF37] to-[#FAF6E8] flex items-center justify-center shadow-[0_4px_14px_rgba(212,175,55,0.3)]">
+              <Layers className="w-5 h-5 text-[#0B132B]" />
             </div>
           </Link>
         )}
@@ -85,7 +85,7 @@ export function Sidebar() {
         <button
           onClick={() => setCollapsed(!collapsed)}
           className={cn(
-            "p-1.5 rounded-lg text-slate-400 hover:text-[#FF9F1C] hover:bg-[#CBF3F0]/40 transition-colors",
+            "p-1.5 rounded-lg text-[#8A95A5] hover:text-[#D4AF37] hover:bg-[#1C2541] transition-colors cursor-pointer",
             collapsed && "mx-auto mt-2 hidden"
           )}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -95,7 +95,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav items */}
-      <nav className="flex-1 py-4 px-2 space-y-1.5 overflow-y-auto">
+      <nav className="flex-1 py-4 px-2.5 space-y-1 overflow-y-auto">
         {navigation.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
           const Icon = item.icon;
@@ -106,35 +106,35 @@ export function Sidebar() {
               href={item.href}
               title={collapsed ? item.name : undefined}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all group relative border",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all group relative border cursor-pointer",
                 isActive
-                  ? "bg-[#CBF3F0] text-[#134E4A] border-[#2EC4B6]/40 shadow-[0_4px_14px_rgba(46,196,182,0.14)] font-semibold"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-[#CBF3F0]/40 border-transparent"
+                  ? "bg-[#1C2541] text-[#F4F1EA] border-[#D4AF37]/40 shadow-xs font-semibold"
+                  : "text-[#A7B3C6] hover:text-[#F4F1EA] hover:bg-[#1C2541]/70 border-transparent"
               )}
             >
               <Icon
                 className={cn(
                   "w-4 h-4 flex-shrink-0 transition-colors",
-                  isActive ? "text-[#2EC4B6]" : "text-slate-500 group-hover:text-slate-800"
+                  isActive ? "text-[#D4AF37]" : "text-[#8A95A5] group-hover:text-[#F4F1EA]"
                 )}
               />
               {!collapsed && <span className="truncate flex-1">{item.name}</span>}
               {!collapsed && item.badge && (
                 <span
                   className={cn(
-                    "text-[10px] px-2 py-0.5 rounded-full font-mono uppercase font-bold",
+                    "text-[10px] px-2 py-0.5 rounded-md font-mono uppercase font-bold",
                     isActive
-                      ? "bg-[#2EC4B6] text-white shadow-xs"
-                      : "bg-[#CBF3F0]/80 text-[#134E4A]"
+                      ? "bg-[#D4AF37] text-[#0B132B]"
+                      : "bg-[#060A17] text-[#A7B3C6] border border-[#1C2541]"
                   )}
                 >
                   {item.badge}
                 </span>
               )}
 
-              {/* Active bar */}
+              {/* Active gold bar */}
               {isActive && (
-                <div className="absolute left-0 top-1.5 bottom-1.5 w-1.5 bg-[#FF9F1C] rounded-r" />
+                <div className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-[#D4AF37] rounded-r" />
               )}
             </Link>
           );
@@ -143,10 +143,10 @@ export function Sidebar() {
 
       {/* Collapse Toggle when in collapsed view */}
       {collapsed && (
-        <div className="p-2 border-t border-[#CBF3F0] flex justify-center">
+        <div className="p-2 border-t border-[#1C2541] flex justify-center">
           <button
             onClick={() => setCollapsed(false)}
-            className="p-2 rounded-xl text-slate-500 hover:text-[#FF9F1C] hover:bg-[#CBF3F0]/40"
+            className="p-2 rounded-xl text-[#8A95A5] hover:text-[#D4AF37] hover:bg-[#1C2541] cursor-pointer"
             title="Expand sidebar"
           >
             <ChevronRight className="w-4 h-4" />
@@ -156,36 +156,36 @@ export function Sidebar() {
 
       {/* Infrastructure Footer Status */}
       {!collapsed && (
-        <div className="p-3.5 border-t border-[#CBF3F0] bg-[#F4F9F8]">
+        <div className="p-3.5 border-t border-[#1C2541] bg-[#060A17]/80">
           <div className="flex items-center justify-between text-xs mb-2">
-            <span className="text-slate-600 flex items-center gap-1.5 font-semibold">
-              <Activity className="w-3.5 h-3.5 text-[#2EC4B6]" />
-              System Status
+            <span className="text-[#A7B3C6] flex items-center gap-1.5 font-semibold text-[11px]">
+              <Activity className="w-3.5 h-3.5 text-[#2A9D8F]" />
+              Cluster Telemetry
             </span>
             <span
               className={cn(
-                "inline-flex items-center gap-1 text-[11px] font-bold",
-                isReady ? "text-[#0D6B63]" : "text-[#B45309]"
+                "inline-flex items-center gap-1 text-[11px] font-bold font-mono",
+                isReady ? "text-[#2A9D8F]" : "text-[#D4AF37]"
               )}
             >
               <span
                 className={cn(
-                  "w-2 h-2 rounded-full",
-                  isReady ? "bg-[#2EC4B6]" : "bg-[#FF9F1C] animate-pulse"
+                  "w-1.5 h-1.5 rounded-full",
+                  isReady ? "bg-[#2A9D8F]" : "bg-[#D4AF37] animate-pulse"
                 )}
               />
-              {isReady ? "Operational" : "Checking..."}
+              {isReady ? "LIVE" : "CHECK"}
             </span>
           </div>
 
-          <div className="grid grid-cols-3 gap-1 text-[10px] text-center font-mono text-slate-600 mt-2">
-            <div className="bg-white px-1.5 py-1 rounded-lg border border-[#CBF3F0] shadow-xs font-semibold">
+          <div className="grid grid-cols-3 gap-1 text-[10px] text-center font-mono text-[#A7B3C6] mt-2">
+            <div className="bg-[#1C2541] px-1.5 py-1 rounded-md border border-white/5 font-semibold">
               PG: {readiness?.checks?.database === "ok" ? "OK" : "—"}
             </div>
-            <div className="bg-white px-1.5 py-1 rounded-lg border border-[#CBF3F0] shadow-xs font-semibold">
+            <div className="bg-[#1C2541] px-1.5 py-1 rounded-md border border-white/5 font-semibold">
               RDS: {readiness?.checks?.redis === "ok" ? "OK" : "—"}
             </div>
-            <div className="bg-white px-1.5 py-1 rounded-lg border border-[#CBF3F0] shadow-xs font-semibold">
+            <div className="bg-[#1C2541] px-1.5 py-1 rounded-md border border-white/5 font-semibold">
               QDR: {readiness?.checks?.qdrant === "ok" ? "OK" : "—"}
             </div>
           </div>

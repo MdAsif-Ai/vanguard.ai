@@ -7,6 +7,10 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ErrorDisplay } from "@/components/ui/ErrorDisplay";
+import { PremiumCard } from "@/components/ui/PremiumCard";
+import { TactileButton } from "@/components/ui/TactileButton";
+import { DocumentCard } from "@/components/ui/DocumentCard";
+import { SoftInput } from "@/components/ui/SoftInput";
 import { documentsApi } from "@/lib/api/documents";
 import { DocumentResponse } from "@/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,10 +23,8 @@ import {
   Search,
   Plus,
   FileCheck,
-  AlertCircle,
-  Clock,
-  Filter,
-  CheckCircle,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { formatBytes, formatDate } from "@/lib/utils";
 
@@ -32,10 +34,11 @@ const MAX_SIZE_MB = 50;
 export default function DocumentsPage() {
   const queryClient = useQueryClient();
 
-  // Search and pagination state
+  // Search, pagination and view mode state
   const [page, setPage] = useState(0);
-  const pageSize = 15;
+  const pageSize = 12;
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 
   // Upload modal / section state
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -200,44 +203,45 @@ export default function DocumentsPage() {
 
   return (
     <AppShell
-      title="Financial Document Repository"
-      description="Manage SEC 10-K, 10-Q filings, transcripts, and financial PDF disclosures with chunk vectorization"
+      title="Financial Document Archive"
+      description="SEC 10-K, 10-Q filings, transcripts, and financial disclosures with Qdrant vector chunk embeddings"
       actions={
         <div className="flex items-center gap-2">
-          <button
+          <TactileButton
+            variant="outline"
+            size="sm"
             onClick={() => refetch()}
-            className="p-2 rounded-xl bg-white hover:bg-[#CBF3F0]/50 text-slate-600 hover:text-slate-800 border border-[#CBF3F0] transition-all shadow-sm active:scale-95"
-            title="Refresh table"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          <button
+            icon={<RefreshCw className="w-3.5 h-3.5" />}
+            title="Refresh repository"
+          />
+          <TactileButton
+            variant="primary"
+            size="sm"
             onClick={() => setShowUploadModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-[#FF9F1C] hover:bg-[#FFBF69] text-white text-xs font-bold shadow-clay-btn flex items-center gap-1.5 transition-all active:scale-95"
+            icon={<Plus className="w-4 h-4" />}
           >
-            <Plus className="w-4 h-4" />
-            <span>Upload Document</span>
-          </button>
+            <span>Upload Filing</span>
+          </TactileButton>
         </div>
       }
     >
       <div className="space-y-6">
-        {/* Upload Drawer / Modal */}
+        {/* Upload Drawer / Ingestion Desk */}
         {showUploadModal && (
-          <div className="bg-white rounded-3xl p-6 border-2 border-[#CBF3F0] shadow-clay space-y-5 animate-in fade-in">
-            <div className="flex items-center justify-between border-b border-[#CBF3F0]/60 pb-3">
+          <PremiumCard variant="paper" className="p-6 space-y-5 shadow-feature animate-reveal">
+            <div className="flex items-center justify-between border-b border-[#DDD6C4] pb-3">
               <div>
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                  <Upload className="w-4 h-4 text-[#FF9F1C]" />
-                  Upload Financial Filing or Document
+                <h3 className="text-sm font-bold text-[#0B132B] flex items-center gap-2 font-serif">
+                  <Upload className="w-4 h-4 text-[#D4AF37]" />
+                  Upload Financial Filing or Disclosure
                 </h3>
-                <p className="text-xs text-slate-400 font-medium">
-                  Accepted: PDF, DOCX, XLSX, TXT, CSV, MD (max 50 MB)
+                <p className="text-xs text-[#8A95A5] font-medium">
+                  Accepted formats: PDF, DOCX, XLSX, TXT, CSV, MD (max 50 MB)
                 </p>
               </div>
               <button
                 onClick={() => setShowUploadModal(false)}
-                className="text-xs font-semibold text-slate-400 hover:text-slate-700 transition-colors"
+                className="text-xs font-semibold text-[#8A95A5] hover:text-[#0B132B] transition-colors"
               >
                 Close
               </button>
@@ -252,12 +256,12 @@ export default function DocumentsPage() {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
+                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
                   isDragging
-                    ? "border-[#2EC4B6] bg-[#CBF3F0]/60 shadow-clay scale-[1.01]"
+                    ? "border-[#D4AF37] bg-[#EAE5D9]/60 scale-[1.005]"
                     : selectedFile
-                    ? "border-[#2EC4B6] bg-[#CBF3F0]/20"
-                    : "border-[#CBF3F0] hover:border-[#2EC4B6] bg-slate-50/50 hover:bg-[#CBF3F0]/20"
+                    ? "border-[#2A9D8F] bg-[#2A9D8F]/5"
+                    : "border-[#DDD6C4] hover:border-[#D4AF37] bg-[#FFFFFF] hover:bg-[#F4F1EA]"
                 }`}
               >
                 <input
@@ -274,21 +278,21 @@ export default function DocumentsPage() {
 
                 {selectedFile ? (
                   <div className="space-y-2">
-                    <FileCheck className="w-10 h-10 text-[#2EC4B6] mx-auto" />
-                    <div className="text-sm font-bold text-slate-800">{selectedFile.name}</div>
-                    <div className="text-xs text-slate-500 font-mono">
-                      {formatBytes(selectedFile.size)} • Ready for ingestion
+                    <FileCheck className="w-10 h-10 text-[#2A9D8F] mx-auto" />
+                    <div className="text-sm font-bold text-[#0B132B]">{selectedFile.name}</div>
+                    <div className="text-xs text-[#8A95A5] font-mono">
+                      {formatBytes(selectedFile.size)} • Ready for vector ingestion
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <Upload className="w-10 h-10 text-[#FF9F1C] mx-auto" />
-                    <div className="text-sm font-semibold text-slate-700">
+                    <Upload className="w-10 h-10 text-[#D4AF37] mx-auto" />
+                    <div className="text-sm font-semibold text-[#0B132B]">
                       Drag & drop your financial report here, or{" "}
-                      <span className="text-[#FF9F1C] font-bold underline">browse files</span>
+                      <span className="text-[#D4AF37] font-bold underline">browse files</span>
                     </div>
-                    <div className="text-xs text-slate-400">
-                      Documents are hashed via SHA-256 to prevent duplicate storage
+                    <div className="text-xs text-[#8A95A5]">
+                      Files are cryptographically verified via SHA-256 for duplicate elimination
                     </div>
                   </div>
                 )}
@@ -296,34 +300,28 @@ export default function DocumentsPage() {
 
               {/* Metadata Inputs */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">Display Name</label>
-                  <input
-                    type="text"
-                    value={customName}
-                    onChange={(e) => setCustomName(e.target.value)}
-                    placeholder="e.g. Google-2025-10K.pdf"
-                    className="w-full bg-white border border-[#CBF3F0] rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#2EC4B6] focus:ring-2 focus:ring-[#2EC4B6]/20 transition-all font-medium"
-                  />
-                </div>
+                <SoftInput
+                  label="Display Name"
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  placeholder="e.g. NVIDIA-2025-Annual-Report.pdf"
+                />
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">Company / Entity</label>
-                  <input
-                    type="text"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
-                    placeholder="e.g. Alphabet Inc."
-                    className="w-full bg-white border border-[#CBF3F0] rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#2EC4B6] focus:ring-2 focus:ring-[#2EC4B6]/20 transition-all font-medium"
-                  />
-                </div>
+                <SoftInput
+                  label="Company / Entity"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="e.g. NVIDIA Corporation"
+                />
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">Document Type</label>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-[#0B132B] uppercase tracking-wider font-mono">
+                    Document Type
+                  </label>
                   <select
                     value={documentType}
                     onChange={(e) => setDocumentType(e.target.value)}
-                    className="w-full bg-white border border-[#CBF3F0] rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#2EC4B6] focus:ring-2 focus:ring-[#2EC4B6]/20 transition-all font-medium"
+                    className="w-full bg-[#FFFFFF] border border-[#DDD6C4] rounded-xl px-3 py-2.5 text-xs text-[#0B132B] focus:outline-none focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/15 font-medium transition-all"
                   >
                     <option value="10-K">10-K (Annual Report)</option>
                     <option value="10-Q">10-Q (Quarterly Report)</option>
@@ -335,32 +333,29 @@ export default function DocumentsPage() {
                   </select>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">Fiscal Year</label>
-                  <input
-                    type="number"
-                    min="1900"
-                    max="2100"
-                    value={fiscalYear}
-                    onChange={(e) =>
-                      setFiscalYear(e.target.value ? parseInt(e.target.value, 10) : "")
-                    }
-                    placeholder="2025"
-                    className="w-full bg-white border border-[#CBF3F0] rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#2EC4B6] focus:ring-2 focus:ring-[#2EC4B6]/20 transition-all font-medium"
-                  />
-                </div>
+                <SoftInput
+                  label="Fiscal Year"
+                  type="number"
+                  min="1900"
+                  max="2100"
+                  value={fiscalYear}
+                  onChange={(e) =>
+                    setFiscalYear(e.target.value ? parseInt(e.target.value, 10) : "")
+                  }
+                  placeholder="2025"
+                />
               </div>
 
               {/* Progress Bar */}
               {uploadProgress !== null && (
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs text-slate-500 font-medium">
-                    <span>Uploading file...</span>
+                  <div className="flex justify-between text-xs text-[#8A95A5] font-medium font-mono">
+                    <span>Ingesting and vectorizing chunks...</span>
                     <span>{uploadProgress}%</span>
                   </div>
-                  <div className="w-full h-2 bg-[#CBF3F0] rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-[#EAE5D9] rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-[#2EC4B6] transition-all duration-200"
+                      className="h-full bg-[#2A9D8F] transition-all duration-200"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
@@ -373,84 +368,147 @@ export default function DocumentsPage() {
                   type="button"
                   onClick={() => setShowUploadModal(false)}
                   disabled={isUploading}
-                  className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+                  className="px-4 py-2 text-xs font-semibold text-[#8A95A5] hover:text-[#0B132B] transition-colors"
                 >
                   Cancel
                 </button>
-                <button
+                <TactileButton
                   type="submit"
+                  variant="primary"
+                  size="md"
                   disabled={!selectedFile || isUploading}
-                  className="px-4 py-2 rounded-xl bg-[#FF9F1C] hover:bg-[#FFBF69] text-white text-xs font-bold shadow-clay-btn disabled:opacity-50 flex items-center gap-2 active:scale-95 transition-all"
+                  isLoading={isUploading}
+                  icon={<Upload className="w-4 h-4" />}
                 >
-                  {isUploading ? (
-                    <>
-                      <LoadingSpinner size="sm" />
-                      <span>Ingesting Document...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Upload & Ingest</span>
-                    </>
-                  )}
-                </button>
+                  <span>{isUploading ? "Ingesting Document..." : "Upload & Ingest"}</span>
+                </TactileButton>
               </div>
             </form>
-          </div>
+          </PremiumCard>
         )}
 
-        {/* Search & Filter Bar */}
+        {/* Search, Filter & View Controls */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#2EC4B6] pointer-events-none" />
-            <input
-              type="text"
+            <SoftInput
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by file name, company, or document type..."
-              className="w-full bg-white border border-[#CBF3F0] rounded-2xl pl-9 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#2EC4B6] focus:ring-2 focus:ring-[#2EC4B6]/20 shadow-sm font-medium transition-all"
+              placeholder="Search by filing title, company ticker, or report type..."
+              leftIcon={<Search className="w-4 h-4" />}
             />
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-            <span>
-              Showing {filteredDocs.length} of {totalDocuments} documents
+          <div className="flex items-center gap-3">
+            {/* View Switcher */}
+            <div className="flex items-center p-1 rounded-xl bg-[#FFFFFF] border border-[#DDD6C4] shadow-xs">
+              <button
+                type="button"
+                onClick={() => setViewMode("cards")}
+                className={`p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors ${
+                  viewMode === "cards"
+                    ? "bg-[#0B132B] text-[#D4AF37] font-bold shadow-xs"
+                    : "text-[#8A95A5] hover:text-[#0B132B]"
+                }`}
+                title="Physical Report Cards View"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Cards</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors ${
+                  viewMode === "table"
+                    ? "bg-[#0B132B] text-[#D4AF37] font-bold shadow-xs"
+                    : "text-[#8A95A5] hover:text-[#0B132B]"
+                }`}
+                title="Ledger Table View"
+              >
+                <List className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Ledger</span>
+              </button>
+            </div>
+
+            <span className="text-xs text-[#8A95A5] font-medium font-mono">
+              Showing {filteredDocs.length} of {totalDocuments} filings
             </span>
           </div>
         </div>
 
-        {/* Documents Table */}
-        <div className="bg-white rounded-3xl border border-[#CBF3F0] overflow-hidden shadow-clay">
-          {isLoading ? (
-            <div className="py-16 text-center text-xs text-slate-400">
-              <LoadingSpinner size="md" label="Loading documents..." />
+        {/* Content Presentation: Cards Grid OR Ledger Table */}
+        {isLoading ? (
+          <div className="py-20 text-center text-xs text-[#8A95A5]">
+            <LoadingSpinner size="md" label="Loading document archive..." />
+          </div>
+        ) : filteredDocs.length === 0 ? (
+          <PremiumCard variant="paper" className="py-20 text-center space-y-3">
+            <Files className="w-12 h-12 text-[#DDD6C4] mx-auto" />
+            <div className="text-sm font-bold text-[#0B132B]">No documents found</div>
+            <p className="text-xs text-[#8A95A5] max-w-sm mx-auto">
+              {searchQuery
+                ? "No institutional filings matched your query. Try a different search term."
+                : "Upload company 10-Ks, 10-Qs, or quarterly filings to begin vector reasoning."}
+            </p>
+            {!searchQuery && (
+              <TactileButton
+                variant="primary"
+                size="sm"
+                onClick={() => setShowUploadModal(true)}
+                icon={<Upload className="w-3.5 h-3.5" />}
+              >
+                <span>Upload Document</span>
+              </TactileButton>
+            )}
+          </PremiumCard>
+        ) : viewMode === "cards" ? (
+          /* INSTITUTIONAL FINANCIAL REPORT CARDS GRID */
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredDocs.map((doc) => (
+                <DocumentCard
+                  key={doc.id}
+                  document={doc}
+                  onReindex={handleReindex}
+                  onDelete={(target) => setDeleteTarget(target)}
+                  isReindexing={reindexingId === doc.id}
+                />
+              ))}
             </div>
-          ) : filteredDocs.length === 0 ? (
-            <div className="py-16 text-center space-y-3">
-              <Files className="w-10 h-10 text-slate-400 mx-auto" />
-              <div className="text-sm font-bold text-slate-700">No documents found</div>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                {searchQuery
-                  ? "No files matched your filter query. Try a different search term."
-                  : "Start by uploading your first financial report to enable AI Q&A."}
-              </p>
-              {!searchQuery && (
-                <button
-                  onClick={() => setShowUploadModal(true)}
-                  className="px-3.5 py-1.5 rounded-xl bg-[#FF9F1C] hover:bg-[#FFBF69] text-white text-xs font-bold shadow-clay-btn inline-flex items-center gap-1.5 transition-all active:scale-95"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Upload Document</span>
-                </button>
-              )}
-            </div>
-          ) : (
+
+            {/* Pagination for Card View */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between text-xs text-[#8A95A5] font-medium pt-2 font-mono">
+                <div>Page {page + 1} of {totalPages}</div>
+                <div className="flex items-center gap-2">
+                  <TactileButton
+                    variant="outline"
+                    size="sm"
+                    disabled={page === 0}
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  >
+                    Previous
+                  </TactileButton>
+                  <TactileButton
+                    variant="outline"
+                    size="sm"
+                    disabled={page + 1 >= totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Next
+                  </TactileButton>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* WORKSTATION LEDGER TABLE */
+          <PremiumCard variant="paper" padded="none" className="overflow-hidden shadow-feature">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#CBF3F0]/30 text-slate-600 uppercase tracking-wider font-mono text-[10px] border-b border-[#CBF3F0]">
+                <thead className="bg-[#0B132B] text-[#F4F1EA] uppercase tracking-wider font-mono text-[10px] border-b border-[#1C2541]">
                   <tr>
                     <th className="py-3.5 px-4 font-bold">Document Name</th>
-                    <th className="py-3.5 px-4 font-bold">Company</th>
+                    <th className="py-3.5 px-4 font-bold">Issuer / Entity</th>
                     <th className="py-3.5 px-4 font-bold">Type</th>
                     <th className="py-3.5 px-4 font-bold">FY</th>
                     <th className="py-3.5 px-4 font-bold">Status</th>
@@ -459,102 +517,91 @@ export default function DocumentsPage() {
                     <th className="py-3.5 px-4 font-bold text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#CBF3F0]/50">
+                <tbody className="divide-y divide-[#DDD6C4]">
                   {filteredDocs.map((doc) => {
                     const isReindexing = reindexingId === doc.id;
 
                     return (
                       <tr
                         key={doc.id}
-                        className="hover:bg-[#CBF3F0]/20 transition-colors group"
+                        className="hover:bg-[#EAE5D9]/40 transition-colors group"
                       >
-                        <td className="py-3.5 px-4 font-semibold text-slate-800">
+                        <td className="py-3.5 px-4 font-semibold text-[#0B132B]">
                           <Link
                             href={`/documents/${doc.id}`}
-                            className="hover:text-[#FF9F1C] flex items-center gap-2 group-hover:underline transition-colors"
+                            className="hover:text-[#D4AF37] flex items-center gap-2 transition-colors"
                           >
-                            <Files className="w-4 h-4 text-[#2EC4B6] group-hover:text-[#FF9F1C] flex-shrink-0 transition-colors" />
-                            <span className="truncate max-w-[220px] font-bold">
+                            <Files className="w-4 h-4 text-[#2A9D8F] group-hover:text-[#D4AF37] flex-shrink-0 transition-colors" />
+                            <span className="truncate max-w-[240px] font-bold">
                               {doc.name}
                             </span>
                           </Link>
-                          <div className="text-[10px] text-slate-400 font-mono mt-0.5 truncate max-w-[220px]">
+                          <div className="text-[10px] text-[#8A95A5] font-mono mt-0.5 truncate max-w-[240px]">
                             SHA: {doc.checksum.slice(0, 16)}…
                           </div>
                         </td>
 
-                        <td className="py-3.5 px-4 text-slate-600 font-medium">
-                          {doc.company || <span className="text-slate-300">—</span>}
+                        <td className="py-3.5 px-4 text-[#0B132B] font-medium">
+                          {doc.company || <span className="text-[#8A95A5]">—</span>}
                         </td>
 
                         <td className="py-3.5 px-4">
                           {doc.document_type ? (
-                            <span className="px-2 py-0.5 rounded-lg bg-[#CBF3F0]/60 border border-[#2EC4B6]/30 text-[#157A70] font-mono text-[11px] font-semibold">
+                            <span className="px-2 py-0.5 rounded-md bg-[#0B132B] text-[#D4AF37] font-mono text-[11px] font-bold border border-[#1C2541]">
                               {doc.document_type}
                             </span>
                           ) : (
-                            <span className="text-slate-300">—</span>
+                            <span className="text-[#8A95A5]">—</span>
                           )}
                         </td>
 
-                        <td className="py-3.5 px-4 text-slate-600 font-mono font-medium">
-                          {doc.fiscal_year ? `FY${doc.fiscal_year}` : <span className="text-slate-300">—</span>}
+                        <td className="py-3.5 px-4 text-[#0B132B] font-mono font-medium">
+                          {doc.fiscal_year ? `FY${doc.fiscal_year}` : <span className="text-[#8A95A5]">—</span>}
                         </td>
 
                         <td className="py-3.5 px-4">
                           <StatusBadge status={doc.status} />
                           {doc.error && (
-                            <div className="text-[10px] text-rose-500 truncate max-w-[150px] mt-0.5" title={doc.error}>
+                            <div className="text-[10px] text-rose-600 truncate max-w-[150px] mt-0.5" title={doc.error}>
                               {doc.error}
                             </div>
                           )}
                         </td>
 
-                        <td className="py-3.5 px-4 text-right font-mono text-slate-700 font-semibold">
-                          {doc.chunk_count !== null && doc.chunk_count !== undefined ? (
-                            doc.chunk_count
-                          ) : (
-                            <span className="text-slate-300">—</span>
-                          )}
+                        <td className="py-3.5 px-4 text-right font-mono text-[#0B132B] font-semibold">
+                          {doc.chunk_count ?? <span className="text-[#8A95A5]">—</span>}
                         </td>
 
-                        <td className="py-3.5 px-4 text-right font-mono text-slate-700 font-semibold">
-                          {doc.page_count !== null && doc.page_count !== undefined ? (
-                            doc.page_count
-                          ) : (
-                            <span className="text-slate-300">—</span>
-                          )}
+                        <td className="py-3.5 px-4 text-right font-mono text-[#0B132B] font-semibold">
+                          {doc.page_count ?? <span className="text-[#8A95A5]">—</span>}
                         </td>
 
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            {/* Detail Link */}
                             <Link
                               href={`/documents/${doc.id}`}
-                              className="p-1.5 rounded-lg hover:bg-[#CBF3F0] text-slate-400 hover:text-[#2EC4B6] transition-colors"
+                              className="p-1.5 rounded-lg hover:bg-[#EAE5D9] text-[#8A95A5] hover:text-[#0B132B] transition-colors"
                               title="Inspect document & chunks"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
                             </Link>
 
-                            {/* Reindex Button */}
                             <button
                               type="button"
                               onClick={() => handleReindex(doc.id)}
                               disabled={isReindexing || doc.status === "processing"}
-                              className="p-1.5 rounded-lg hover:bg-[#CBF3F0] text-slate-400 hover:text-[#FF9F1C] transition-colors disabled:opacity-40"
+                              className="p-1.5 rounded-lg hover:bg-[#EAE5D9] text-[#8A95A5] hover:text-[#D4AF37] transition-colors disabled:opacity-40"
                               title="Re-run parsing and chunk indexing"
                             >
                               <RefreshCw
-                                className={`w-3.5 h-3.5 ${isReindexing ? "animate-spin text-[#FF9F1C]" : ""}`}
+                                className={`w-3.5 h-3.5 ${isReindexing ? "animate-spin text-[#D4AF37]" : ""}`}
                               />
                             </button>
 
-                            {/* Delete Button */}
                             <button
                               type="button"
                               onClick={() => setDeleteTarget(doc)}
-                              className="p-1.5 rounded-lg hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition-colors"
+                              className="p-1.5 rounded-lg hover:bg-rose-100 text-[#8A95A5] hover:text-rose-600 transition-colors"
                               title="Delete document"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -567,35 +614,33 @@ export default function DocumentsPage() {
                 </tbody>
               </table>
             </div>
-          )}
 
-          {/* Pagination Footer */}
-          {totalPages > 1 && (
-            <div className="p-4 border-t border-[#CBF3F0] flex items-center justify-between text-xs text-slate-500 font-medium">
-              <div>
-                Page {page + 1} of {totalPages}
+            {/* Pagination Footer */}
+            {totalPages > 1 && (
+              <div className="p-4 border-t border-[#DDD6C4] flex items-center justify-between text-xs text-[#8A95A5] font-medium font-mono">
+                <div>Page {page + 1} of {totalPages}</div>
+                <div className="flex items-center gap-2">
+                  <TactileButton
+                    variant="outline"
+                    size="sm"
+                    disabled={page === 0}
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  >
+                    Previous
+                  </TactileButton>
+                  <TactileButton
+                    variant="outline"
+                    size="sm"
+                    disabled={page + 1 >= totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Next
+                  </TactileButton>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={page === 0}
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#CBF3F0]/40 border border-[#CBF3F0] disabled:opacity-40 text-slate-700 font-semibold shadow-sm transition-all active:scale-95"
-                >
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  disabled={page + 1 >= totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#CBF3F0]/40 border border-[#CBF3F0] disabled:opacity-40 text-slate-700 font-semibold shadow-sm transition-all active:scale-95"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </PremiumCard>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}

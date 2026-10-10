@@ -10,8 +10,8 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, className, showDot = true }: StatusBadgeProps) {
   const norm = (status || "unknown").toLowerCase();
 
-  let styles = "bg-slate-100 text-slate-700 border-slate-200 shadow-xs";
-  let dotColor = "bg-slate-400";
+  let styles = "bg-[#EAE5D9] text-[#5A677D] border-[#DDD6C4]";
+  let dotColor = "bg-[#8A95A5]";
   let pulse = false;
 
   switch (norm) {
@@ -21,44 +21,44 @@ export function StatusBadge({ status, className, showDot = true }: StatusBadgePr
     case "ok":
     case "active":
     case "verified":
-      styles = "bg-[#CBF3F0] text-[#0D6B63] border-[#2EC4B6]/50 shadow-xs";
-      dotColor = "bg-[#2EC4B6]";
+      styles = "bg-[#2A9D8F]/15 text-[#2A9D8F] border-[#2A9D8F]/40";
+      dotColor = "bg-[#2A9D8F]";
       break;
     case "running":
     case "processing":
-      styles = "bg-[#FFF4E5] text-[#9A4C00] border-[#FFBF69] shadow-xs";
-      dotColor = "bg-[#FF9F1C]";
+      styles = "bg-[#D4AF37]/15 text-[#9C7C18] border-[#D4AF37]/40";
+      dotColor = "bg-[#D4AF37]";
       pulse = true;
       break;
     case "queued":
     case "uploaded":
     case "pending":
-      styles = "bg-[#FFF8EE] text-[#B45309] border-[#FFBF69]/60 shadow-xs";
-      dotColor = "bg-[#FFBF69]";
+      styles = "bg-[#EAE5D9] text-[#5A677D] border-[#DDD6C4]";
+      dotColor = "bg-[#D4AF37]";
       pulse = true;
       break;
     case "failed":
     case "error":
     case "not_ready":
-      styles = "bg-rose-50 text-rose-700 border-rose-200 shadow-xs";
+      styles = "bg-rose-50 text-rose-700 border-rose-300";
       dotColor = "bg-rose-500";
       break;
     default:
-      styles = "bg-slate-100 text-slate-700 border-slate-200 shadow-xs";
-      dotColor = "bg-slate-400";
+      styles = "bg-[#EAE5D9] text-[#5A677D] border-[#DDD6C4]";
+      dotColor = "bg-[#8A95A5]";
   }
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border capitalize",
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-mono font-bold border capitalize shadow-2xs",
         styles,
         className
       )}
     >
       {showDot && (
         <span
-          className={cn("w-1.5 h-1.5 rounded-full", dotColor, pulse && "animate-ping")}
+          className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", dotColor, pulse && "animate-pulse")}
         />
       )}
       {status || "unknown"}

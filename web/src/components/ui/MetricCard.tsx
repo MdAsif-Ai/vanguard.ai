@@ -27,38 +27,45 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        "bg-white rounded-2xl p-5 border border-[#CBF3F0] shadow-[8px_8px_20px_rgba(46,196,182,0.07),-4px_-4px_12px_rgba(255,255,255,0.95),0_2px_6px_rgba(0,0,0,0.03)] hover:shadow-[12px_12px_28px_rgba(46,196,182,0.14),-5px_-5px_16px_rgba(255,255,255,1)] hover:-translate-y-0.5 hover:border-[#2EC4B6]/50 transition-all duration-200 relative overflow-hidden group",
+        "bg-white rounded-2xl p-5 border border-[#E2DCD0] shadow-card hover:shadow-card-hover",
+        "card-3d hover:border-[#D4AF37] transition-all duration-200 relative overflow-hidden group select-none",
         className
       )}
     >
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#FF9F1C] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      <div className="flex items-center justify-between text-slate-500 mb-3">
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{title}</span>
+      {/* Top Gold Shimmer on Hover */}
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[#5A677D] font-mono">
+          {title}
+        </span>
         {Icon && (
-          <div className="p-2.5 rounded-xl bg-[#CBF3F0]/60 text-[#2EC4B6] border border-[#2EC4B6]/30 group-hover:text-[#0D6B63] transition-colors shadow-xs">
-            <Icon className="w-4 h-4" />
+          <div className="p-2 rounded-xl bg-[#0B132B] text-[#D4AF37] border border-[#1C2541] group-hover:bg-[#1C2541] transition-colors shadow-xs">
+            <Icon className="w-4 h-4 text-[#D4AF37]" />
           </div>
         )}
       </div>
 
       <div className="flex items-baseline justify-between gap-2">
-        <div className="text-2xl font-extrabold tracking-tight text-slate-900 font-mono">{value}</div>
+        <div className="text-2xl font-black tracking-tight text-[#0B132B] font-mono">
+          {value}
+        </div>
         {badge}
       </div>
 
       {(subtext || trend) && (
-        <div className="mt-2.5 flex items-center gap-2 text-xs text-slate-500">
+        <div className="mt-2.5 flex items-center gap-2 text-xs text-[#5A677D]">
           {trend && (
             <span
               className={cn(
-                "font-semibold",
-                trend.isPositive ? "text-[#0D6B63]" : "text-rose-600"
+                "font-semibold font-mono",
+                trend.isPositive ? "text-[#2A9D8F]" : "text-rose-600"
               )}
             >
               {trend.value}
             </span>
           )}
-          {subtext && <span>{subtext}</span>}
+          {subtext && <span className="font-medium">{subtext}</span>}
         </div>
       )}
     </div>

@@ -4,13 +4,13 @@ import React, { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DataLabel } from "@/components/ui/DataLabel";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { PremiumCard } from "@/components/ui/PremiumCard";
+import { TactileButton } from "@/components/ui/TactileButton";
 import { researchApi } from "@/lib/api/research";
 import { useQuery } from "@tanstack/react-query";
 import {
-  FileCheck2,
   FileText,
   ShieldCheck,
   ExternalLink,
@@ -47,7 +47,7 @@ function EvidenceContent() {
   const parsedScore = scoreParam ? parseFloat(scoreParam) : 0.985;
   const scorePercent = Math.round(parsedScore * 100);
 
-  // Helper to highlight terms in passage
+  // Helper to highlight terms in passage with restrained gold accent
   const renderHighlightedPassage = (text: string) => {
     if (!highlightKeyword.trim()) {
       return text;
@@ -55,7 +55,10 @@ function EvidenceContent() {
     const parts = text.split(new RegExp(`(${highlightKeyword})`, "gi"));
     return parts.map((part, i) =>
       part.toLowerCase() === highlightKeyword.toLowerCase() ? (
-        <mark key={i} className="bg-amber-400/30 text-amber-200 px-1 rounded font-semibold">
+        <mark
+          key={i}
+          className="bg-[#D4AF37]/25 text-[#0B132B] px-1 py-0.5 rounded font-bold border-b-2 border-[#D4AF37]"
+        >
           {part}
         </mark>
       ) : (
@@ -67,91 +70,91 @@ function EvidenceContent() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Source Citation Meta Banner */}
-      <div className="bg-white rounded-3xl p-6 border-2 border-[#CBF3F0] shadow-clay space-y-4">
+      <PremiumCard variant="paper" className="p-6 shadow-card">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center justify-center w-10 h-10 rounded-2xl bg-[#CBF3F0] text-[#FF9F1C] border border-[#2EC4B6]/40 text-sm font-black shadow-sm">
+          <div className="flex items-center gap-3.5">
+            <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-[#0B132B] text-[#D4AF37] border border-[#1C2541] text-base font-black shadow-xs">
               [{index}]
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-[#2EC4B6]" />
+                <h2 className="text-base font-bold text-[#0B132B] flex items-center gap-2 font-serif">
+                  <FileText className="w-4 h-4 text-[#D4AF37]" />
                   {documentName}
                 </h2>
                 {pageNumber && (
-                  <span className="px-2.5 py-0.5 rounded-lg text-xs font-bold bg-[#CBF3F0] text-[#157A70] border border-[#2EC4B6]/40">
+                  <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-[#2A9D8F]/10 text-[#2A9D8F] border border-[#2A9D8F]/30 font-mono">
                     Page {pageNumber}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                Extracted from vector search with cosine grounding score of {parsedScore.toFixed(3)}
+              <p className="text-xs text-[#8A95A5] mt-0.5 font-medium">
+                Extracted from dense vector retrieval with cosine grounding score of {parsedScore.toFixed(3)}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="px-3.5 py-1.5 rounded-xl bg-[#CBF3F0] border border-[#2EC4B6]/50 text-[#157A70] text-xs font-bold flex items-center gap-1.5 shadow-sm">
-              <ShieldCheck className="w-4 h-4 text-[#2EC4B6]" />
+            <div className="px-3.5 py-2 rounded-xl bg-[#2A9D8F]/10 border border-[#2A9D8F]/40 text-[#2A9D8F] text-xs font-bold flex items-center gap-1.5 shadow-xs">
+              <ShieldCheck className="w-4 h-4 text-[#2A9D8F]" />
               <span>{scorePercent}% Semantic Match</span>
             </div>
           </div>
         </div>
-      </div>
+      </PremiumCard>
 
       {/* Question & Answer Grounding Context */}
       {(questionParam || answerParam) && (
-        <div className="bg-white rounded-3xl p-6 border border-[#CBF3F0] shadow-clay space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-[#FF9F1C]" />
-            Reasoning Query & Answer Context
+        <PremiumCard variant="paper" className="p-6 space-y-4 shadow-card">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[#0B132B] font-mono flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+            Reasoning Query & Synthesized Answer
           </h3>
 
           {questionParam && (
-            <div className="p-4 rounded-2xl bg-[#CBF3F0]/25 border border-[#CBF3F0] space-y-1">
-              <span className="text-[11px] font-bold text-[#FF9F1C] uppercase tracking-wide">
+            <div className="p-4 rounded-xl bg-[#0B132B] border border-[#1C2541] text-[#F4F1EA] space-y-1">
+              <span className="text-[11px] font-bold text-[#D4AF37] uppercase tracking-wide font-mono">
                 Original Question:
               </span>
-              <p className="text-sm font-bold text-slate-900">{questionParam}</p>
+              <p className="text-sm font-semibold leading-relaxed">{questionParam}</p>
             </div>
           )}
 
           {answerParam && (
-            <div className="p-4 rounded-2xl bg-white border border-[#CBF3F0] space-y-1 shadow-sm">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+            <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#DDD6C4] space-y-1">
+              <span className="text-[11px] font-bold text-[#8A95A5] uppercase tracking-wide font-mono">
                 Synthesized Answer:
               </span>
-              <p className="text-xs text-slate-700 leading-relaxed font-sans">{answerParam}</p>
+              <p className="text-xs text-[#0B132B] leading-relaxed font-sans font-medium">{answerParam}</p>
             </div>
           )}
-        </div>
+        </PremiumCard>
       )}
 
-      {/* Evidence Passage Section */}
-      <div className="bg-white rounded-3xl p-6 border border-[#CBF3F0] space-y-4 shadow-clay">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#CBF3F0]/60 pb-3">
-          <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-            <Quote className="w-4 h-4 text-[#FF9F1C]" />
-            <span>Full Cited Document Passage</span>
+      {/* Evidence Passage Section - Institutional Research Paper Surface */}
+      <PremiumCard variant="paper" className="p-7 space-y-5 shadow-feature">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#DDD6C4] pb-4">
+          <div className="flex items-center gap-2 text-sm font-bold text-[#0B132B] font-serif">
+            <Quote className="w-4 h-4 text-[#D4AF37]" />
+            <span>Full Cited Document Passage (Audited Report Excerpt)</span>
           </div>
 
           {/* Keyword highlighter */}
           <div className="relative w-full sm:w-64">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#2EC4B6]" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#2A9D8F]" />
             <input
               type="text"
               value={highlightKeyword}
               onChange={(e) => setHighlightKeyword(e.target.value)}
               placeholder="Highlight terms in text..."
-              className="w-full bg-white border border-[#CBF3F0] rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#2EC4B6] focus:ring-2 focus:ring-[#2EC4B6]/20 font-medium transition-all"
+              className="w-full bg-[#FFFFFF] border border-[#DDD6C4] rounded-xl pl-8 pr-3 py-1.5 text-xs text-[#0B132B] placeholder-[#8A95A5] focus:outline-none focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/15 font-medium transition-all"
             />
           </div>
         </div>
 
         {/* Highlighted Quote Box */}
-        <div className="relative p-6 rounded-2xl bg-[#CBF3F0]/15 border border-[#CBF3F0] font-serif leading-relaxed text-slate-800 text-sm shadow-inner">
-          <div className="absolute top-3 right-3 text-[#2EC4B6] pointer-events-none">
+        <div className="relative p-6 rounded-xl bg-[#FFFFFF] border border-[#DDD6C4] font-serif leading-relaxed text-[#0B132B] text-sm">
+          <div className="absolute top-3 right-3 text-[#2A9D8F] pointer-events-none">
             <Quote className="w-12 h-12 opacity-15" />
           </div>
 
@@ -164,37 +167,37 @@ function EvidenceContent() {
         </div>
 
         {/* Evidence Details Grid */}
-        <div className="pt-4 border-t border-[#CBF3F0]/60 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+        <div className="pt-4 border-t border-[#DDD6C4] grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <DataLabel
             label="Audit Verification"
             value="Human-Auditable Passage"
-            icon={<CheckCircle2 className="w-3.5 h-3.5 text-[#2EC4B6]" />}
+            icon={<CheckCircle2 className="w-3.5 h-3.5 text-[#2A9D8F]" />}
           />
           <DataLabel
             label="Document Page"
             value={pageNumber ? `Page ${pageNumber}` : "Page unindexed"}
-            icon={<Hash className="w-3.5 h-3.5 text-[#FF9F1C]" />}
+            icon={<Hash className="w-3.5 h-3.5 text-[#D4AF37]" />}
           />
           <DataLabel
             label="Cosine Grounding"
             value={`${parsedScore.toFixed(4)} (${scorePercent}%)`}
-            icon={<ShieldCheck className="w-3.5 h-3.5 text-[#2EC4B6]" />}
+            icon={<ShieldCheck className="w-3.5 h-3.5 text-[#2A9D8F]" />}
           />
         </div>
 
         <div className="pt-4 flex items-center justify-between">
-          <span className="text-[11px] text-slate-400 font-mono font-medium">
+          <span className="text-[11px] text-[#8A95A5] font-mono font-medium">
             Grounding Standard: ISO/IEC AI Audit Compliance
           </span>
           <Link
             href="/documents"
-            className="text-xs text-[#FF9F1C] hover:text-[#FFBF69] font-bold flex items-center gap-1.5 transition-colors"
+            className="text-xs text-[#0B132B] hover:text-[#D4AF37] font-bold flex items-center gap-1.5 transition-colors"
           >
             <span>Explore source documents repository</span>
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3.5 h-3.5 text-[#D4AF37]" />
           </Link>
         </div>
-      </div>
+      </PremiumCard>
     </div>
   );
 }
@@ -205,12 +208,14 @@ export default function EvidenceViewerPage() {
       title="Citation & Evidence Inspector"
       description="Auditable grounding proof for financial statements, revenue figures, and executive disclosures"
       actions={
-        <Link
-          href="/ask"
-          className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#CBF3F0]/50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all border border-[#CBF3F0] shadow-sm active:scale-95"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 text-slate-500" />
-          <span>Back to AI Research</span>
+        <Link href="/ask">
+          <TactileButton
+            variant="outline"
+            size="sm"
+            icon={<ArrowLeft className="w-3.5 h-3.5 text-[#8A95A5]" />}
+          >
+            <span>Back to AI Research</span>
+          </TactileButton>
         </Link>
       }
     >

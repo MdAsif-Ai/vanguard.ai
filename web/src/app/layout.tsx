@@ -24,7 +24,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-[#F4F9F8] text-[#1E293B] min-h-screen font-sans antialiased selection:bg-[#CBF3F0] selection:text-[#134E4A]">
+      <body className="bg-[#F4F1EA] text-[#0B132B] min-h-screen font-sans antialiased selection:bg-[#D4AF37]/30 selection:text-[#0B132B]">
         <QueryProvider>
           <AuthProvider>{children}</AuthProvider>
         </QueryProvider>

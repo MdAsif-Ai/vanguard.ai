@@ -4,154 +4,265 @@
 
 @layer base {
   :root {
-    --vanguard-orange: #FF9F1C;
-    --vanguard-orange-light: #FFBF69;
-    --vanguard-white: #FFFFFF;
-    --vanguard-mint: #CBF3F0;
-    --vanguard-teal: #2EC4B6;
-    --vanguard-bg: #F4F9F8;
-    --vanguard-text: #1E293B;
+    --vanguard-navy: #0B132B;
+    --vanguard-navy-light: #1C2541;
+    --vanguard-ivory: #F4F1EA;
+    --vanguard-gold: #D4AF37;
+    --vanguard-teal: #2A9D8F;
+    --vanguard-border: #E2DCD0;
+    --vanguard-text: #0B132B;
 
-    --background: #F4F9F8;
-    --foreground: #1E293B;
+    --background: #F4F1EA;
+    --foreground: #0B132B;
   }
 
   * {
-    border-color: #CBF3F0;
+    border-color: #E2DCD0;
   }
 
   body {
-    background-color: #F4F9F8;
-    color: #1E293B;
-    font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #F4F1EA;
+    background-image: 
+      radial-gradient(circle at 10% 10%, rgba(212, 175, 55, 0.03) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(42, 157, 143, 0.04) 0%, transparent 40%),
+      radial-gradient(circle at 50% 50%, rgba(244, 241, 234, 0.8) 0%, transparent 70%);
+    background-attachment: fixed;
+    color: #0B132B;
+    font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
   }
 
-  /* Custom Sleek Scrollbar */
+  /* Refined Terminal Scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #F4F9F8;
+    background: #EAE5D9;
   }
   ::-webkit-scrollbar-thumb {
-    background: #CBF3F0;
+    background: #C7BC9F;
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #2EC4B6;
+    background: #D4AF37;
   }
 }
 
 @layer utilities {
-  .glass-card {
-    background: #FFFFFF;
-    border: 1px solid #CBF3F0;
-    box-shadow: 8px 8px 22px rgba(46, 196, 182, 0.08), -4px -4px 14px rgba(255, 255, 255, 0.95), 0 2px 6px rgba(0, 0, 0, 0.03);
-    border-radius: 18px;
+  /* Surface Level 1 - Clean Ivory Card */
+  .surface-ivory {
+    background: #F4F1EA;
+    border: 1px solid #E2DCD0;
+    box-shadow: 0 4px 16px rgba(11, 19, 43, 0.06), 0 1px 3px rgba(11, 19, 43, 0.03);
   }
 
-  .glass-header {
-    background: rgba(255, 255, 255, 0.92);
+  /* Surface Level 2 - Elevated Financial Card */
+  .surface-elevated {
+    background: #FFFFFF;
+    border: 1px solid #E2DCD0;
+    box-shadow: 0 8px 24px rgba(11, 19, 43, 0.08), 0 2px 6px rgba(11, 19, 43, 0.05);
+  }
+
+  /* Surface Level 3 - High-Value Feature Surface */
+  .surface-feature {
+    background: #FFFFFF;
+    border: 1px solid #D5CBB9;
+    box-shadow: 0 16px 40px rgba(11, 19, 43, 0.12), 0 4px 12px rgba(11, 19, 43, 0.06);
+  }
+
+  /* Terminal Surface - Deep Navy Command Layer */
+  .surface-terminal {
+    background: #0B132B;
+    border: 1px solid #1C2541;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Secondary Navy Panel */
+  .surface-navy-light {
+    background: #1C2541;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Subtle Glass Accent (Use selectively) */
+  .glass-subtle {
+    background: rgba(244, 241, 234, 0.82);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 220, 208, 0.7);
+  }
+
+  .glass-dark {
+    background: rgba(11, 19, 43, 0.88);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border-bottom: 1px solid #CBF3F0;
-    box-shadow: 0 4px 18px rgba(46, 196, 182, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .clay-card {
-    background: #FFFFFF;
-    border: 1px solid #CBF3F0;
-    box-shadow: 8px 8px 22px rgba(46, 196, 182, 0.08), -4px -4px 14px rgba(255, 255, 255, 0.95), 0 2px 6px rgba(0, 0, 0, 0.03);
-    border-radius: 18px;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Controlled 3D Hover Effect for Cards */
+  .card-3d {
+    transform: perspective(1000px) translateZ(0);
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease;
   }
 
-  .clay-card:hover {
-    box-shadow: 12px 12px 28px rgba(46, 196, 182, 0.14), -6px -6px 18px rgba(255, 255, 255, 1), 0 4px 10px rgba(0, 0, 0, 0.04);
-    transform: translateY(-1px);
+  .card-3d:hover {
+    transform: perspective(1000px) translateY(-3px) rotateX(1deg) rotateY(-0.5deg);
+    box-shadow: 0 16px 36px rgba(11, 19, 43, 0.12), 0 4px 12px rgba(11, 19, 43, 0.06);
+    border-color: #D4AF37;
   }
 
-  .clay-panel {
-    background: #FFFFFF;
-    border: 1px solid #CBF3F0;
-    box-shadow: 0 10px 30px rgba(46, 196, 182, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03);
-    border-radius: 18px;
+  /* Physical Button 3D Interactions */
+  .btn-gold {
+    background: #D4AF37;
+    color: #0B132B;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 14px rgba(212, 175, 55, 0.35);
+    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .clay-input {
-    background: #FFFFFF;
-    border: 1.5px solid #CBF3F0;
-    box-shadow: inset 1px 2px 4px rgba(0, 0, 0, 0.03), inset -1px -1px 3px rgba(255, 255, 255, 0.9);
-    border-radius: 12px;
-    transition: all 0.2s ease;
+  .btn-gold:hover {
+    background: #E0C563;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.45);
   }
 
-  .clay-input:focus {
-    border-color: #2EC4B6;
-    box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.18), inset 1px 1px 3px rgba(0, 0, 0, 0.02);
-  }
-
-  .clay-btn-orange {
-    background-color: #FF9F1C;
-    color: #FFFFFF;
-    border-radius: 12px;
-    box-shadow: 0 6px 18px rgba(255, 159, 28, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.4);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .clay-btn-orange:hover {
-    background-color: #FFBF69;
-    box-shadow: 0 8px 22px rgba(255, 159, 28, 0.42), inset 0 1px 2px rgba(255, 255, 255, 0.5);
-    transform: translateY(-1px);
-  }
-
-  .clay-btn-orange:active {
+  .btn-gold:active {
     transform: translateY(1px);
-    box-shadow: 0 2px 8px rgba(255, 159, 28, 0.3);
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
   }
 
-  .clay-btn-teal {
-    background-color: #2EC4B6;
-    color: #FFFFFF;
-    border-radius: 12px;
-    box-shadow: 0 6px 18px rgba(46, 196, 182, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.4);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  .btn-navy {
+    background: #1C2541;
+    color: #F4F1EA;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(11, 19, 43, 0.2);
+    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .clay-btn-teal:hover {
-    background-color: #249E92;
-    box-shadow: 0 8px 22px rgba(46, 196, 182, 0.42), inset 0 1px 2px rgba(255, 255, 255, 0.5);
-    transform: translateY(-1px);
+  .btn-navy:hover {
+    background: #243054;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(11, 19, 43, 0.3);
   }
 
-  .clay-btn-teal:active {
+  .btn-navy:active {
     transform: translateY(1px);
-    box-shadow: 0 2px 8px rgba(46, 196, 182, 0.3);
+    box-shadow: 0 2px 6px rgba(11, 19, 43, 0.2);
   }
 
-  .glow-orange {
-    box-shadow: 0 0 22px -4px rgba(255, 159, 28, 0.35);
+  .btn-teal {
+    background: #2A9D8F;
+    color: #FFFFFF;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 14px rgba(42, 157, 143, 0.35);
+    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .glow-teal {
-    box-shadow: 0 0 22px -4px rgba(46, 196, 182, 0.35);
+  .btn-teal:hover {
+    background: #33b8a8;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(42, 157, 143, 0.45);
   }
 
-  .glow-mint {
-    box-shadow: 0 0 20px -4px rgba(203, 243, 240, 0.6);
+  .btn-teal:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(42, 157, 143, 0.3);
+  }
+
+  /* Institutional Paper Report Effect */
+  .paper-report {
+    background: #F4F1EA;
+    border: 1px solid #E2DCD0;
+    position: relative;
+    box-shadow: 0 4px 18px rgba(11, 19, 43, 0.06), 0 1px 3px rgba(11, 19, 43, 0.03);
+  }
+
+  .paper-report::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    right: 5px;
+    left: 5px;
+    height: 3px;
+    background: #EAE5D9;
+    border: 1px solid #DDD6C4;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    z-index: -1;
+    opacity: 0.8;
+  }
+
+  /* Smooth Staggered Card Reveal */
+  .animate-reveal {
+    animation: cardReveal 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes cardReveal {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.99);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* AI Luminous Intelligence Pulse */
+  .ai-pulse {
+    animation: aiPulse 2.8s ease-in-out infinite;
+  }
+
+  @keyframes aiPulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 1;
+    }
+  }
+
+  /* Hero 3D Ambient Float Animation */
+  .hero-floating {
+    animation: heroFloat 8s ease-in-out infinite;
+  }
+
+  @keyframes heroFloat {
+    0%, 100% {
+      transform: translateY(0px) scale(1);
+    }
+    50% {
+      transform: translateY(-8px) scale(1.02);
+    }
+  }
+
+  /* Ambient Ribbon Shimmer */
+  .hero-shimmer {
+    animation: heroShimmer 6s ease-in-out infinite alternate;
+  }
+
+  @keyframes heroShimmer {
+    0% {
+      filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.2)) brightness(1);
+    }
+    100% {
+      filter: drop-shadow(0 0 35px rgba(42, 157, 143, 0.35)) brightness(1.08);
+    }
   }
 }
 
-/* Animations */
-@keyframes pulse-subtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.animate-pulse-subtle {
-  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+    transform: none !important;
+  }
 }
