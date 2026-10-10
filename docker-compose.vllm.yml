@@ -2,14 +2,17 @@ services:
   vllm:
     image: vllm/vllm-openai:latest
     command: >
-      --model Qwen/Qwen3-4B-Instruct-2507
+      --model Md-Asif/VANGUARD-MODEL-V1
+      --served-model-name Md-Asif/VANGUARD-MODEL-V1
       --port 8000
-      --gpu-memory-utilization 0.80
-      --max-model-len 4096
-      --dtype half
+      --gpu-memory-utilization 0.86
+      --max-model-len 2048
+      --trust-remote-code
     environment:
-      - HF_HOME=/data/models
+      - HF_HOME=/root/.cache/huggingface
+      - HF_HUB_OFFLINE=1
     volumes:
+      - /home/techpark3/.cache/huggingface:/root/.cache/huggingface
       - models_data:/data/models
     ports:
       - "8001:8000"
@@ -21,3 +24,4 @@ services:
               count: 1
               capabilities: ["gpu"]
     restart: unless-stopped
+

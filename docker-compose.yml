@@ -11,6 +11,7 @@ services:
       - .env
     volumes:
       - documents_data:/data/documents
+      - ./app:/app/app
     depends_on:
       postgres:
         condition: service_healthy
@@ -28,6 +29,18 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - api
     restart: unless-stopped
 
   worker:
@@ -88,6 +101,38 @@ services:
       timeout: 5s
       retries: 12
       start_period: 15s
+    restart: unless-stopped
+
+  vllm:
+    image: vllm/vllm-openai:latest
+    command: >
+      --model Md-Asif/VANGUARD-MODEL-V1
+      --served-model-name Md-Asif/VANGUARD-MODEL-V1
+      --port 8000
+      --gpu-memory-utilization 0.86
+      --max-model-len 2048
+      --trust-remote-code
+    environment:
+      - HF_HOME=/root/.cache/huggingface
+      - HF_HUB_OFFLINE=1
+    volumes:
+      - /home/techpark3/.cache/huggingface:/root/.cache/huggingface
+      - models_data:/data/models
+    ports:
+      - "8001:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/v1/models || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 25
+      start_period: 30s
     restart: unless-stopped
 
 volumes:

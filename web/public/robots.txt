@@ -1,0 +1,3 @@
+# Vanguard AI
+User-agent: *
+Allow: /

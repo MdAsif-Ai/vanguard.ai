@@ -63,9 +63,14 @@ rate_limiter = RateLimiter()
 
 async def rate_limit_middleware(request: Request, call_next: Any) -> Any:
     """FastAPI middleware: rate limits per user (from JWT) or IP."""
-    # Skip health endpoints
+    # Skip preflight OPTIONS and health endpoints
     path = request.url.path
-    if "/api/health" in path or "/docs" in path or "/openapi" in path:
+    if (
+        request.method == "OPTIONS"
+        or "/api/health" in path
+        or "/docs" in path
+        or "/openapi" in path
+    ):
         return await call_next(request)
 
     # Get identifier from auth header or IP
